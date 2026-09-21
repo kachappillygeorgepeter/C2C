@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: c2c-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: c2c_user
+      POSTGRES_PASSWORD: c2c_password
+      POSTGRES_DB: c2c_portal
+    ports:
+      - "5432:5432"
+    volumes:
+      - c2c_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U c2c_user -d c2c_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  c2c_pgdata:
+    driver: local
