@@ -33,29 +33,29 @@ export const StudentDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Welcome & Profile Ring Card */}
-      <div className="bg-gradient-to-r from-indigo-900 to-indigo-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+      {/* Welcome & Profile Card */}
+      <div className="bg-slate-900 rounded-2xl p-7 text-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-800">
         <div className="space-y-2">
-          <span className="text-xs font-semibold px-3 py-1 bg-white/20 rounded-full text-indigo-100 uppercase tracking-wider">
+          <span className="text-[11px] font-bold px-2.5 py-0.5 bg-slate-800 rounded-md text-slate-300 uppercase tracking-wider">
             Student Portal
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            Welcome back, {profile?.fullName || 'Student'}!
+          <h1 className="text-2xl font-bold tracking-tight">
+            Welcome back, {profile?.fullName || 'Student'}
           </h1>
-          <p className="text-indigo-200 text-sm max-w-xl">
+          <p className="text-slate-300 text-xs max-w-xl">
             Track your ongoing recruitment drives, view real-time eligibility status, and attend scheduled interviews.
           </p>
-          <div className="pt-2 flex items-center gap-4 text-xs text-indigo-200">
-            <span>Roll No: <strong>{profile?.studentId || 'N/A'}</strong></span>
-            <span>Branch: <strong>{profile?.branch || 'N/A'}</strong></span>
-            <span>CGPA: <strong>{profile?.cgpa || 'N/A'}</strong></span>
+          <div className="pt-2 flex items-center gap-4 text-xs text-slate-300">
+            <span>Roll No: <strong className="text-white">{profile?.studentId || 'N/A'}</strong></span>
+            <span>Branch: <strong className="text-white">{profile?.branch || 'N/A'}</strong></span>
+            <span>CGPA: <strong className="text-white">{profile?.cgpa || 'N/A'}</strong></span>
           </div>
         </div>
 
         {/* Profile Completion Dial */}
-        <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center shrink-0 w-48">
-          <p className="text-xs text-indigo-200 font-semibold mb-1">Profile Strength</p>
-          <div className="text-3xl font-extrabold text-white">
+        <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 text-center shrink-0 w-44">
+          <p className="text-xs text-slate-400 font-medium mb-1">Profile Strength</p>
+          <div className="text-2xl font-bold text-white">
             {profile?.completionPct || 0}%
           </div>
           <p className="text-[11px] text-indigo-200 mt-1">
@@ -71,8 +71,8 @@ export const StudentDashboard: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 interactive-card">
           <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
             <Briefcase className="w-6 h-6" />
           </div>
@@ -82,7 +82,7 @@ export const StudentDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 interactive-card">
           <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
             <CheckCircle className="w-6 h-6" />
           </div>
@@ -92,7 +92,7 @@ export const StudentDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 interactive-card">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
             <FileText className="w-6 h-6" />
           </div>
@@ -102,7 +102,7 @@ export const StudentDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4 interactive-card">
           <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
             <Clock className="w-6 h-6" />
           </div>
@@ -122,9 +122,9 @@ export const StudentDashboard: React.FC = () => {
           </div>
           <Link
             to="/student/opportunities"
-            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 group"
           >
-            Explore All <ArrowRight className="w-3.5 h-3.5" />
+            Explore All <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
 
@@ -132,7 +132,7 @@ export const StudentDashboard: React.FC = () => {
           {opportunities?.slice(0, 4).map((job: any) => (
             <div
               key={job.id}
-              className="p-4 rounded-xl border border-slate-100 hover:border-indigo-200 bg-slate-50/50 hover:bg-white transition-all group"
+              className="p-4 rounded-xl border border-slate-100 hover:border-indigo-200 bg-slate-50/50 hover:bg-white transition-all group interactive-card"
             >
               <div className="flex items-start justify-between">
                 <div>

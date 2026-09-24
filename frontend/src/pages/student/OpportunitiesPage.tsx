@@ -72,7 +72,7 @@ export const OpportunitiesPage: React.FC = () => {
             return (
               <div
                 key={job.id}
-                className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm interactive-card flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-4">
@@ -131,7 +131,7 @@ export const OpportunitiesPage: React.FC = () => {
                       </span>
                     )}
                     {job.eligibility?.allowedDepts?.map((dept: string) => (
-                      <span key={dept} className="text-[11px] px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-medium">
+                      <span key={dept} className="text-[11px] px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md font-medium border border-indigo-200/50">
                         {dept}
                       </span>
                     ))}
@@ -144,7 +144,7 @@ export const OpportunitiesPage: React.FC = () => {
                   </span>
                   <Link
                     to={`/student/opportunities/${job.id}`}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 group-hover:translate-x-0.5 transition-transform"
                   >
                     View Evaluation & Apply <ArrowRight className="w-3.5 h-3.5" />
                   </Link>

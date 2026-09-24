@@ -24,21 +24,21 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-900 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-slate-900 rounded-2xl p-7 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
         <div>
-          <span className="text-xs font-semibold px-3 py-1 bg-white/20 rounded-full text-indigo-100 uppercase tracking-wider">
+          <span className="text-[11px] font-bold px-2.5 py-0.5 bg-slate-800 rounded-md text-slate-300 uppercase tracking-wider">
             Placement Cell Administration
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-2">Institutional Analytics & Governance</h1>
-          <p className="text-slate-300 text-sm mt-1">Real-time placement ratios, salary statistics, and approval queues</p>
+          <h1 className="text-2xl font-bold tracking-tight mt-2">Institutional Analytics & Governance</h1>
+          <p className="text-slate-300 text-xs mt-1">Real-time placement ratios, salary statistics, and approval queues</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center shrink-0">
-          <p className="text-xs text-indigo-200 font-semibold mb-1">Institution Placement Rate</p>
-          <div className="text-4xl font-extrabold text-white">
+        <div className="bg-slate-800 p-5 rounded-xl border border-slate-700 text-center shrink-0 w-44">
+          <p className="text-xs text-slate-400 font-medium mb-1">Placement Rate</p>
+          <div className="text-3xl font-bold text-white">
             {metrics?.placementRate || 0}%
           </div>
-          <p className="text-[11px] text-indigo-200 mt-1">
+          <p className="text-[11px] text-slate-400 mt-1">
             {metrics?.placedStudents || 0} of {metrics?.totalStudents || 0} Placed
           </p>
         </div>

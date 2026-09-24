@@ -5,10 +5,20 @@
 @layer base {
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-slate-50 text-slate-900;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', 'Inter', sans-serif;
   }
+}
+
+/* Smooth micro-interaction helpers */
+.interactive-card {
+  @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md;
+}
+
+.interactive-btn {
+  @apply transition-all duration-150 active:scale-95 disabled:pointer-events-none disabled:opacity-50;
 }
 
 /* Custom scrollbars */
@@ -17,7 +27,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
@@ -26,3 +36,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+

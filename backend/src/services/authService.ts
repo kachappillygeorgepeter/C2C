@@ -183,10 +183,10 @@ export class AuthService {
     }
 
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN
+      expiresIn: env.JWT_EXPIRES_IN as any
     })
 
-    const refreshTokenString = `${jwt.sign(payload, env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' })}_${Date.now()}`
+    const refreshTokenString = `${jwt.sign(payload, env.REFRESH_TOKEN_SECRET, { expiresIn: '30d' as any })}_${Date.now()}`
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     await prisma.refreshToken.create({

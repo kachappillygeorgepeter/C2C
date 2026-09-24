@@ -9,13 +9,20 @@ interface AuthState {
   logout: () => void
 }
 
+let initialUser = null
+try {
+  const storedUser = localStorage.getItem('c2c_user')
+  initialUser = storedUser ? JSON.parse(storedUser) : null
+} catch (e) {
+  localStorage.removeItem('c2c_user')
+}
+
 const storedToken = localStorage.getItem('c2c_token')
-const storedUser = localStorage.getItem('c2c_user')
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: initialUser,
   token: storedToken || null,
-  isAuthenticated: !!storedToken,
+  isAuthenticated: !!storedToken && !!initialUser,
 
   setAuth: (user, token) => {
     localStorage.setItem('c2c_token', token)

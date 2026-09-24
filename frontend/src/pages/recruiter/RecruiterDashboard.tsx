@@ -27,15 +27,15 @@ export const RecruiterDashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Recruiter Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-slate-900 rounded-2xl p-7 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 border border-slate-800">
         <div>
-          <span className="text-xs font-semibold px-3 py-1 bg-white/20 rounded-full text-indigo-100 uppercase tracking-wider">
+          <span className="text-[11px] font-bold px-2.5 py-0.5 bg-slate-800 rounded-md text-slate-300 uppercase tracking-wider">
             Recruiter Workspace
           </span>
-          <h1 className="text-3xl font-extrabold tracking-tight mt-2">
+          <h1 className="text-2xl font-bold tracking-tight mt-2">
             {company?.name || 'Your Company Workspace'}
           </h1>
-          <p className="text-slate-300 text-sm mt-1">
+          <p className="text-slate-300 text-xs mt-1">
             Logged in as {profile?.fullName} ({profile?.designation || 'Hiring Lead'})
           </p>
 
