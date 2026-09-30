@@ -97,9 +97,9 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           box-sizing: border-box;
           background:
-            radial-gradient(circle at 50% -10%, rgba(174, 20, 44, 0.12), transparent 45%),
-            radial-gradient(circle at 10% 20%, rgba(254, 226, 226, 0.6), transparent 40%),
-            linear-gradient(180deg, #FDF8F8 0%, #FFF5F5 50%, #F8FAFC 100%);
+            radial-gradient(circle at 50% -10%, rgba(30, 41, 59, 0.10), transparent 45%),
+            radial-gradient(circle at 10% 20%, rgba(226, 232, 240, 0.6), transparent 40%),
+            linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%);
         }
 
         .kx-page *, .kx-page *::before, .kx-page *::after {
@@ -114,14 +114,14 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           z-index: 1;
           opacity: 0.45;
           background-image:
-            linear-gradient(to right, rgba(174, 20, 44, 0.05) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(174, 20, 44, 0.05) 1px, transparent 1px);
+            linear-gradient(to right, rgba(30, 41, 59, 0.04) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(30, 41, 59, 0.04) 1px, transparent 1px);
           background-size: 56px 56px;
           -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
           mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
         }
 
-        /* Ambient Crimson Lights */
+        /* Ambient Neutral/Slate Lights */
         .kx-halo-top {
           position: absolute;
           top: -30vh;
@@ -129,7 +129,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           transform: translateX(-50%);
           width: min(1000px, 120vw);
           height: 60vh;
-          background: rgba(174, 20, 44, 0.14);
+          background: rgba(71, 85, 105, 0.12);
           filter: blur(80px);
           border-radius: 9999px;
           pointer-events: none;
@@ -142,7 +142,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           height: 340px;
           top: 15%;
           left: 5%;
-          background: rgba(254, 205, 211, 0.35);
+          background: rgba(203, 213, 225, 0.45);
           filter: blur(90px);
           border-radius: 50%;
           pointer-events: none;
@@ -155,7 +155,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           height: 340px;
           right: 5%;
           bottom: 12%;
-          background: rgba(254, 226, 226, 0.4);
+          background: rgba(226, 232, 240, 0.5);
           filter: blur(90px);
           border-radius: 50%;
           pointer-events: none;
@@ -188,7 +188,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         .kx-shell-shadow {
           position: absolute;
           inset: 4% 4% -5%;
-          background: rgba(174, 20, 44, 0.08);
+          background: rgba(15, 23, 42, 0.12);
           filter: blur(28px);
           border-radius: 28px;
           z-index: -1;
@@ -202,14 +202,14 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         .kx-glass-card {
           padding: 28px 24px;
           border-radius: 24px;
-          border: 1px solid rgba(226, 232, 240, 0.9);
+          border: 1px solid rgba(203, 213, 225, 0.8);
           transform: translateZ(16px);
           overflow: hidden;
           position: relative;
           background: rgba(255, 255, 255, 0.95);
           box-shadow:
-            0 20px 45px -10px rgba(15, 23, 42, 0.06),
-            0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+            0 20px 45px -10px rgba(15, 23, 42, 0.08),
+            0 0 0 1px rgba(255, 255, 255, 0.9) inset;
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
         }
@@ -220,15 +220,15 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           height: 260px;
           border-radius: 50%;
           transform: translate(-50%, -50%);
-          opacity: 0.3;
+          opacity: 0.25;
           filter: blur(32px);
-          background: radial-gradient(circle, rgba(174, 20, 44, 0.12), transparent 70%);
+          background: radial-gradient(circle, rgba(51, 65, 85, 0.15), transparent 70%);
           pointer-events: none;
           z-index: 2;
           transition: left 120ms linear, top 120ms linear;
         }
 
-        /* Edge Runner in Crimson #AE142C */
+        /* Edge Runner in Modern Charcoal #1E293B */
         .kx-edge-runner {
           position: absolute;
           inset: -1px;
@@ -245,8 +245,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           height: 2px;
           border-radius: 999px;
           opacity: 0.9;
-          box-shadow: 0 0 8px rgba(174, 20, 44, 0.6);
-          background: linear-gradient(90deg, transparent, #AE142C, transparent);
+          box-shadow: 0 0 8px rgba(30, 41, 59, 0.5);
+          background: linear-gradient(90deg, transparent, #334155, transparent);
         }
 
         .kx-beam-v {
@@ -255,8 +255,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           height: 45%;
           border-radius: 999px;
           opacity: 0.9;
-          box-shadow: 0 0 8px rgba(174, 20, 44, 0.6);
-          background: linear-gradient(180deg, transparent, #AE142C, transparent);
+          box-shadow: 0 0 8px rgba(30, 41, 59, 0.5);
+          background: linear-gradient(180deg, transparent, #334155, transparent);
         }
 
         .kx-beam-top { top: 0; left: -48%; animation: kxRunTop 4s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
@@ -299,8 +299,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(135deg, #AE142C, #830E20);
-          box-shadow: 0 4px 14px rgba(174, 20, 44, 0.35);
+          background: linear-gradient(135deg, #1E293B, #0F172A);
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
           color: #ffffff;
         }
 
@@ -333,8 +333,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         /* Demo Quick-Fill Bar */
         .kx-demo-bar {
-          background: #FAF6F6;
-          border: 1px solid #F1E5E7;
+          background: #F1F5F9;
+          border: 1px solid #E2E8F0;
           border-radius: 12px;
           padding: 8px 10px;
           margin-bottom: 16px;
@@ -346,7 +346,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-demo-label {
           font-weight: 700;
-          color: #AE142C;
+          color: #334155;
           display: flex;
           align-items: center;
           gap: 4px;
@@ -360,7 +360,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         .kx-demo-chip {
           padding: 3px 8px;
           border-radius: 6px;
-          border: 1px solid #EADBDE;
+          border: 1px solid #CBD5E1;
           background: #FFFFFF;
           color: #475569;
           font-weight: 700;
@@ -370,13 +370,13 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         }
 
         .kx-demo-chip:hover {
-          border-color: #AE142C;
-          color: #AE142C;
+          border-color: #475569;
+          color: #0F172A;
         }
 
         .kx-demo-chip.active {
-          background: #AE142C;
-          border-color: #AE142C;
+          background: #1E293B;
+          border-color: #1E293B;
           color: #FFFFFF;
         }
 
@@ -407,7 +407,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-role-btn.active {
           background: #FFFFFF;
-          color: #AE142C;
+          color: #0F172A;
           box-shadow: 0 1px 3px rgba(0,0,0,0.08);
           font-weight: 700;
         }
@@ -431,9 +431,9 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         }
 
         .kx-input-group:focus-within {
-          border-color: #AE142C;
+          border-color: #334155;
           background: #FFFFFF;
-          box-shadow: 0 0 0 3px rgba(174, 20, 44, 0.12);
+          box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.12);
         }
 
         .kx-input-icon {
@@ -445,7 +445,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         }
 
         .kx-input-group:focus-within .kx-input-icon {
-          color: #AE142C;
+          color: #0F172A;
         }
 
         .kx-input {
@@ -504,21 +504,25 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         }
 
         .kx-checkbox.checked {
-          background: #AE142C;
-          border-color: #AE142C;
+          background: #1E293B;
+          border-color: #1E293B;
         }
 
         .kx-forgot-link {
-          color: #AE142C;
+          color: #475569;
           text-decoration: none;
           font-weight: 500;
+        }
+        .kx-forgot-link:hover {
+          color: #0F172A;
+          text-decoration: underline;
         }
 
         .kx-submit-btn {
           height: 46px;
           border-radius: 12px;
           border: none;
-          background: linear-gradient(135deg, #AE142C, #8F0E22);
+          background: linear-gradient(135deg, #1E293B, #0F172A);
           color: #FFFFFF;
           font-size: 13px;
           font-weight: 700;
@@ -529,7 +533,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          box-shadow: 0 4px 14px rgba(174, 20, 44, 0.3);
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25);
           font-family: inherit;
           transition: transform 180ms ease, box-shadow 180ms ease;
           margin-top: 4px;
@@ -537,7 +541,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 6px 18px rgba(174, 20, 44, 0.45);
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.35);
         }
 
         .kx-submit-btn:disabled {

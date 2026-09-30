@@ -255,53 +255,53 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#FDFBFB', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         .light-card {
           background: #FFFFFF;
-          border: 1px solid #F1E5E7;
-          box-shadow: 0 1px 3px rgba(174, 20, 44, 0.04);
+          border: 1px solid #E2E8F0;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
           border-radius: 16px;
         }
-        .crimson-btn {
-          background: linear-gradient(135deg, #AE142C, #8f0e22);
+        .theme-btn {
+          background: linear-gradient(135deg, #1E293B, #0F172A);
           color: #FFFFFF;
           border: none;
-          box-shadow: 0 2px 8px rgba(174, 20, 44, 0.25);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.2);
           cursor: pointer;
           transition: all 0.15s ease;
         }
-        .crimson-btn:hover {
-          background: linear-gradient(135deg, #991025, #7d0a1b);
-          box-shadow: 0 4px 12px rgba(174, 20, 44, 0.35);
+        .theme-btn:hover {
+          background: linear-gradient(135deg, #334155, #1E293B);
+          box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
         }
         .light-input {
-          background: #FAF6F6;
-          border: 1px solid #EADBDE;
+          background: #F8FAFC;
+          border: 1px solid #CBD5E1;
           color: #0F172A;
           outline: none;
         }
         .light-input:focus {
-          border-color: #AE142C;
-          box-shadow: 0 0 0 3px rgba(174, 20, 44, 0.12);
+          border-color: #334155;
+          box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.12);
         }
       `}</style>
 
       {/* ─────────────────────────────────────────────────────────────
-          SIDEBAR WITH #AE142C ACCENTS
+          SIDEBAR WITH SHADES OF GREY ACCENTS
          ───────────────────────────────────────────────────────────── */}
-      <aside style={{ width: '260px', backgroundColor: '#FFFFFF', borderRight: '1px solid #F1E5E7', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 16px', flexShrink: 0, zIndex: 10 }}>
+      <aside style={{ width: '260px', backgroundColor: '#FFFFFF', borderRight: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 16px', flexShrink: 0, zIndex: 10 }}>
         <div>
           {/* Logo & Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid #F1E5E7', marginBottom: '20px' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #AE142C, #830E20)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '16px', color: '#ffffff', boxShadow: '0 2px 8px rgba(174,20,44,0.3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid #E2E8F0', marginBottom: '20px' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'linear-gradient(135deg, #1E293B, #0F172A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '16px', color: '#ffffff', boxShadow: '0 2px 8px rgba(15,23,42,0.2)' }}>
               C2C
             </div>
             <div>
               <div style={{ fontWeight: '800', fontSize: '16px', color: '#0F172A', letterSpacing: '-0.02em' }}>C2C Portal</div>
-              <span style={{ fontSize: '10px', fontWeight: '800', background: currentUser.role === 'ADMIN' ? '#fef3c7' : currentUser.role === 'RECRUITER' ? '#e0f2fe' : '#FDF2F4', color: currentUser.role === 'ADMIN' ? '#b45309' : currentUser.role === 'RECRUITER' ? '#0369a1' : '#AE142C', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.04em' }}>
+              <span style={{ fontSize: '10px', fontWeight: '800', background: currentUser.role === 'ADMIN' ? '#fef3c7' : currentUser.role === 'RECRUITER' ? '#e0f2fe' : '#F1F5F9', color: currentUser.role === 'ADMIN' ? '#b45309' : currentUser.role === 'RECRUITER' ? '#0369a1' : '#334155', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.04em' }}>
                 {currentUser.role} ROUTE
               </span>
             </div>
@@ -330,9 +330,9 @@ export default function App() {
                       border: 'none',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      background: isActive ? '#FDF2F4' : 'transparent',
-                      color: isActive ? '#AE142C' : '#64748B',
-                      boxShadow: isActive ? 'inset 0 0 0 1px #F9D2D8' : 'none'
+                      background: isActive ? '#F1F5F9' : 'transparent',
+                      color: isActive ? '#0F172A' : '#64748B',
+                      boxShadow: isActive ? 'inset 0 0 0 1px #CBD5E1' : 'none'
                     }}
                   >
                     {tab.label}
@@ -365,9 +365,9 @@ export default function App() {
                       border: 'none',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      background: isActive ? '#FDF2F4' : 'transparent',
-                      color: isActive ? '#AE142C' : '#64748B',
-                      boxShadow: isActive ? 'inset 0 0 0 1px #F9D2D8' : 'none'
+                      background: isActive ? '#F1F5F9' : 'transparent',
+                      color: isActive ? '#0F172A' : '#64748B',
+                      boxShadow: isActive ? 'inset 0 0 0 1px #CBD5E1' : 'none'
                     }}
                   >
                     {tab.label}
@@ -400,9 +400,9 @@ export default function App() {
                       border: 'none',
                       cursor: 'pointer',
                       textAlign: 'left',
-                      background: isActive ? '#FDF2F4' : 'transparent',
-                      color: isActive ? '#AE142C' : '#64748B',
-                      boxShadow: isActive ? 'inset 0 0 0 1px #F9D2D8' : 'none'
+                      background: isActive ? '#F1F5F9' : 'transparent',
+                      color: isActive ? '#0F172A' : '#64748B',
+                      boxShadow: isActive ? 'inset 0 0 0 1px #CBD5E1' : 'none'
                     }}
                   >
                     {tab.label}
@@ -414,12 +414,12 @@ export default function App() {
         </div>
 
         {/* Current User Snapshot & Sign Out */}
-        <div style={{ background: '#FAF6F6', borderRadius: '14px', padding: '14px', border: '1px solid #F1E5E7' }}>
+        <div style={{ background: '#F8FAFC', borderRadius: '14px', padding: '14px', border: '1px solid #E2E8F0' }}>
           <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>{currentUser.name}</div>
           <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>{currentUser.email}</div>
           <button
             onClick={() => setCurrentUser(null)}
-            style={{ marginTop: '12px', width: '100%', padding: '8px', background: '#FFFFFF', border: '1px solid #EADBDE', borderRadius: '8px', color: '#AE142C', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+            style={{ marginTop: '12px', width: '100%', padding: '8px', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px', color: '#334155', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
           >
             Switch Role / Sign Out
           </button>
@@ -431,19 +431,19 @@ export default function App() {
          ───────────────────────────────────────────────────────────── */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         {/* Top Navbar */}
-        <header style={{ height: '74px', borderBottom: '1px solid #F1E5E7', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 36px', backgroundColor: '#FFFFFF' }}>
+        <header style={{ height: '74px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 36px', backgroundColor: '#FFFFFF' }}>
           <div>
             <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: 0 }}>
-              {currentUser.role === 'STUDENT' && 'Student Portal &bull; Opportunities'}
-              {currentUser.role === 'RECRUITER' && 'Recruiter Pipeline &bull; Candidate Screening'}
-              {currentUser.role === 'ADMIN' && 'Placement Cell Governance &bull; Institutional Control'}
+              {currentUser.role === 'STUDENT' && 'Student Portal • Opportunities'}
+              {currentUser.role === 'RECRUITER' && 'Recruiter Pipeline • Candidate Screening'}
+              {currentUser.role === 'ADMIN' && 'Placement Cell Governance • Institutional Control'}
             </h2>
             <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>
-              RBAC Guard: <strong style={{ color: '#AE142C' }}>{currentUser.role} Authenticated</strong> &bull; Backend APIs active
+              RBAC Guard: <strong style={{ color: '#334155' }}>{currentUser.role} Authenticated</strong> &bull; Backend APIs active
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#64748B', background: '#FAF6F6', padding: '8px 14px', borderRadius: '10px', border: '1px solid #F1E5E7' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#64748B', background: '#F8FAFC', padding: '8px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block' }} />
             <span>Active Session: <strong style={{ color: '#0F172A' }}>Verified</strong></span>
           </div>
@@ -492,7 +492,7 @@ export default function App() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                               <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                                <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: '#FDF2F4', color: '#AE142C', border: '1px solid #F9D2D8' }}>
+                                <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: '#F1F5F9', color: '#1E293B', border: '1px solid #CBD5E1' }}>
                                   {job.jobType.replace('_', ' ')}
                                 </span>
                                 <span style={{ fontSize: '11px', color: '#64748B' }}>Deadline: {job.deadline}</span>
@@ -501,37 +501,37 @@ export default function App() {
                               <div style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>{job.company} &bull; {job.location}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '18px', fontWeight: '800', color: '#AE142C' }}>{job.salary}</div>
+                              <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>{job.salary}</div>
                               <div style={{ fontSize: '11px', color: '#64748B' }}>{job.openings} Openings</div>
                             </div>
                           </div>
 
                           <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.5 }}>{job.description}</p>
 
-                          <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#64748B', borderTop: '1px solid #FAF2F3', paddingTop: '12px' }}>
+                          <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '12px' }}>
                             <span>Min CGPA: <strong style={{ color: '#0F172A' }}>{job.minCgpa}</strong></span>
                             <span>Max Backlogs: <strong style={{ color: '#0F172A' }}>{job.maxBacklogs}</strong></span>
                             <span>Eligible Branches: <strong style={{ color: '#0F172A' }}>{job.allowedDepts.join(', ')}</strong></span>
                           </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #FAF2F3', paddingTop: '14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #F1F5F9', paddingTop: '14px' }}>
                             <div style={{ fontSize: '12px' }}>
                               {evalRes.eligible ? (
                                 <span style={{ color: '#16a34a', fontWeight: '600' }}>&bull; You are ELIGIBLE to apply</span>
                               ) : (
-                                <span style={{ color: '#AE142C', fontWeight: '600' }}>&bull; Ineligible: {evalRes.reasons[0]}</span>
+                                <span style={{ color: '#64748B', fontWeight: '600' }}>&bull; Ineligible: {evalRes.reasons[0]}</span>
                               )}
                             </div>
                             <div>
                               {isApplied ? (
-                                <span style={{ padding: '8px 18px', borderRadius: '10px', background: '#F1E5E7', color: '#AE142C', fontSize: '12px', fontWeight: '700' }}>
+                                <span style={{ padding: '8px 18px', borderRadius: '10px', background: '#F1F5F9', color: '#475569', fontSize: '12px', fontWeight: '700' }}>
                                   Application Submitted
                                 </span>
                               ) : (
                                 <button
                                   disabled={!evalRes.eligible}
                                   onClick={() => handleApply(job.id)}
-                                  className="crimson-btn"
+                                  className="theme-btn"
                                   style={{ padding: '10px 22px', borderRadius: '10px', fontSize: '12px', fontWeight: '700', opacity: evalRes.eligible ? 1 : 0.4 }}
                                 >
                                   One-Click Apply
@@ -554,12 +554,12 @@ export default function App() {
                       const j = jobs.find((item) => item.id === jId)
                       if (!j) return null
                       return (
-                        <div key={jId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #F1E5E7', background: '#FAF6F6' }}>
+                        <div key={jId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                           <div>
                             <div style={{ fontWeight: '700', fontSize: '14px' }}>{j.title}</div>
                             <div style={{ fontSize: '12px', color: '#64748B' }}>{j.company} &bull; {j.salary}</div>
                           </div>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#AE142C', background: '#FDF2F4', border: '1px solid #F9D2D8', padding: '4px 10px', borderRadius: '6px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: '#1E293B', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '4px 10px', borderRadius: '6px' }}>
                             SHORTLISTED
                           </span>
                         </div>
@@ -576,7 +576,7 @@ export default function App() {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700' }}>
                         <span>CGPA</span>
-                        <span style={{ color: '#AE142C' }}>{studentCgpa}</span>
+                        <span style={{ color: '#0F172A' }}>{studentCgpa}</span>
                       </div>
                       <input
                         type="range"
@@ -585,7 +585,7 @@ export default function App() {
                         step="0.1"
                         value={studentCgpa}
                         onChange={(e) => setStudentCgpa(parseFloat(e.target.value))}
-                        style={{ width: '100%', accentColor: '#AE142C' }}
+                        style={{ width: '100%', accentColor: '#1E293B' }}
                       />
                     </div>
                     <div>
@@ -595,7 +595,7 @@ export default function App() {
                           <button
                             key={n}
                             onClick={() => setStudentBacklogs(n)}
-                            style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #F1E5E7', background: studentBacklogs === n ? '#AE142C' : '#FAF6F6', color: studentBacklogs === n ? '#FFF' : '#0F172A', fontWeight: '700' }}
+                            style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #E2E8F0', background: studentBacklogs === n ? '#1E293B' : '#F8FAFC', color: studentBacklogs === n ? '#FFF' : '#0F172A', fontWeight: '700' }}
                           >
                             {n}
                           </button>
@@ -620,14 +620,14 @@ export default function App() {
                       <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Candidate Screening Pipeline</h3>
                       <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>Review and move applicants across hiring stages.</p>
                     </div>
-                    <button onClick={() => setRecruiterTab('post-job')} className="crimson-btn" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>
+                    <button onClick={() => setRecruiterTab('post-job')} className="theme-btn" style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' }}>
                       + Post Job
                     </button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {applicants.map((cand) => (
-                      <div key={cand.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #F1E5E7', background: '#FAF6F6' }}>
+                      <div key={cand.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                         <div>
                           <div style={{ fontWeight: '700', fontSize: '14px' }}>{cand.studentName}</div>
                           <div style={{ fontSize: '12px', color: '#64748B' }}>
@@ -707,7 +707,7 @@ export default function App() {
                         style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '13px' }}
                       />
                     </div>
-                    <button type="submit" className="crimson-btn" style={{ padding: '12px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', marginTop: '10px' }}>
+                    <button type="submit" className="theme-btn" style={{ padding: '12px', borderRadius: '10px', fontSize: '13px', fontWeight: '700', marginTop: '10px' }}>
                       Publish Job Opening
                     </button>
                   </form>
@@ -718,7 +718,7 @@ export default function App() {
                 <div className="light-card" style={{ padding: '28px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 14px 0' }}>Scheduled Candidate Interviews</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #F1E5E7', background: '#FAF6F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: '700', fontSize: '14px' }}>Rohan Deshmukh &bull; Technical Round 1</div>
                         <div style={{ fontSize: '12px', color: '#64748B' }}>Amazon AWS &bull; 28 Sep 2026, 10:30 AM (Online Google Meet)</div>
@@ -743,9 +743,9 @@ export default function App() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
                     {[
                       { label: 'TOTAL PLACED', val: '86.4%', tag: '384 Students', color: '#16a34a' },
-                      { label: 'ACTIVE CORPORATES', val: '64 Companies', tag: 'Verified Recruiters', color: '#AE142C' },
+                      { label: 'ACTIVE CORPORATES', val: '64 Companies', tag: 'Verified Recruiters', color: '#0F172A' },
                       { label: 'PENDING REVIEWS', val: `${pendingList.length} Items`, tag: 'Action Required', color: '#d97706' },
-                      { label: 'AVERAGE CTC', val: '12.8 LPA', tag: 'Campus Benchmark', color: '#AE142C' }
+                      { label: 'AVERAGE CTC', val: '12.8 LPA', tag: 'Campus Benchmark', color: '#0F172A' }
                     ].map((s, i) => (
                       <div key={i} className="light-card" style={{ padding: '24px' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>{s.label}</div>
@@ -773,9 +773,9 @@ export default function App() {
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {pendingList.map((item) => (
-                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #F1E5E7', background: '#FAF6F6' }}>
+                        <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                           <div>
-                            <span style={{ fontSize: '10px', fontWeight: '800', color: '#AE142C', background: '#FDF2F4', border: '1px solid #F9D2D8', padding: '2px 6px', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '10px', fontWeight: '800', color: '#1E293B', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px' }}>
                               PENDING {item.type}
                             </span>
                             <div style={{ fontWeight: '700', fontSize: '14px', marginTop: '4px' }}>{item.name}</div>
@@ -785,7 +785,7 @@ export default function App() {
                             <button onClick={() => handleAdminApprove(item.id)} style={{ padding: '8px 14px', borderRadius: '8px', background: '#16a34a', border: 'none', color: '#FFF', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
                               Approve
                             </button>
-                            <button onClick={() => handleAdminApprove(item.id)} style={{ padding: '8px 14px', borderRadius: '8px', background: '#FFF', border: '1px solid #EADBDE', color: '#AE142C', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
+                            <button onClick={() => handleAdminApprove(item.id)} style={{ padding: '8px 14px', borderRadius: '8px', background: '#FFF', border: '1px solid #CBD5E1', color: '#334155', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}>
                               Reject
                             </button>
                           </div>
@@ -805,7 +805,7 @@ export default function App() {
                       { name: 'Priya Sharma', usn: '1MS22IS042', dept: 'ISE', cgpa: 8.4, backlogs: 0 },
                       { name: 'Rohan Deshmukh', usn: '1MS22CS088', dept: 'CSE', cgpa: 7.8, backlogs: 0 }
                     ].map((st, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px', borderRadius: '10px', border: '1px solid #F1E5E7', background: '#FAF6F6', fontSize: '12px' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px', borderRadius: '10px', border: '1px solid #E2E8F0', background: '#F8FAFC', fontSize: '12px' }}>
                         <div>
                           <strong>{st.name}</strong> ({st.usn}) &bull; {st.dept}
                         </div>
