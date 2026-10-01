@@ -522,6 +522,15 @@ export default function App() {
           padding: 16px;
         }
         
+        @media (min-width: 769px) {
+          .c2c-hamburger-btn {
+            display: none !important;
+          }
+          .c2c-close-btn {
+            display: none !important;
+          }
+        }
+
         @media (max-width: 768px) {
           .c2c-sidebar {
             position: fixed !important;
@@ -535,6 +544,9 @@ export default function App() {
           }
           .c2c-sidebar.mobile-open {
             transform: translateX(0);
+          }
+          .c2c-close-btn {
+            display: inline-flex !important;
           }
           .c2c-main-header {
             padding: 0 16px !important;
@@ -589,8 +601,8 @@ export default function App() {
             {/* Mobile Close Button */}
             <button
               onClick={() => setMobileMenuOpen(false)}
-              className="outline-btn"
-              style={{ display: 'none', padding: '4px 8px', fontSize: '12px' }}
+              className="outline-btn c2c-close-btn"
+              style={{ padding: '4px 8px', fontSize: '12px' }}
               aria-label="Close menu"
             >
               ✕
@@ -736,8 +748,8 @@ export default function App() {
             {/* Hamburger Button on Mobile */}
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="outline-btn"
-              style={{ display: 'inline-flex', padding: '6px 10px', fontSize: '14px', alignItems: 'center' }}
+              className="outline-btn c2c-hamburger-btn"
+              style={{ padding: '6px 10px', fontSize: '14px', alignItems: 'center' }}
               aria-label="Open navigation menu"
             >
               ☰
