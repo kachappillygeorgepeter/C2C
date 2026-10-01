@@ -128,7 +128,6 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
   return (
     <div className="kx-page">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
 
         .kx-page {
           min-height: 100svh;
@@ -214,12 +213,13 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           max-width: 430px;
           perspective: 1400px;
           z-index: 10;
-          animation: kxCardEntrance 600ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          opacity: 1;
+          animation: kxCardEntrance 450ms cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         @keyframes kxCardEntrance {
-          from { opacity: 0; transform: translateY(20px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+          0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* 3D Card Shell with interactive tilt */

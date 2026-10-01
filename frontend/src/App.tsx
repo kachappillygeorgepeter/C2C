@@ -455,7 +455,6 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap');
         * { box-sizing: border-box; }
         
         .light-card {
