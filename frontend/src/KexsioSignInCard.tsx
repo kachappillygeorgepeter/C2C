@@ -597,9 +597,16 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           transform: scale(0.99);
         }
 
+        .kx-submit-btn:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0F172A;
+        }
+
         .kx-submit-btn:disabled {
-          opacity: 0.7;
+          opacity: 0.65;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .kx-spinner {
