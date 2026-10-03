@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { apiFetch, tokenStorage, UserSession } from './api'
+import Hyperspeed from './Hyperspeed'
 
 export type UserRole = 'STUDENT' | 'RECRUITER' | 'ADMIN'
 
@@ -142,10 +143,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           color: #0F172A;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           box-sizing: border-box;
-          background:
-            radial-gradient(circle at 50% -10%, rgba(30, 41, 59, 0.08), transparent 45%),
-            radial-gradient(circle at 10% 20%, rgba(241, 245, 249, 0.9), transparent 40%),
-            linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%);
+          background: #FFFFFF;
         }
 
         .kx-page *, .kx-page *::before, .kx-page *::after {
@@ -597,9 +595,16 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           transform: scale(0.99);
         }
 
+        .kx-submit-btn:focus-visible {
+          outline: none;
+          box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px #0F172A;
+        }
+
         .kx-submit-btn:disabled {
-          opacity: 0.7;
+          opacity: 0.65;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         .kx-spinner {
@@ -641,6 +646,9 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           text-decoration: underline;
         }
       `}</style>
+
+      {/* Hyperspeed: Kexsio-native editorial animated canvas background */}
+      <Hyperspeed />
 
       {/* Ambient background animations */}
       <div className="kx-grid-overlay" aria-hidden="true" />
