@@ -678,24 +678,21 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
             />
 
             <div className="kx-card-content">
-              {/* Brand Logo: C2C */}
-              <div
-                className="kx-logo-wrap"
-                role="button"
-                tabIndex={0}
-                title="Return to Home"
-                onClick={() => { window.location.href = '/' }}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { window.location.href = '/' } }}
-                style={{ cursor: 'pointer' }}
+              {/* Brand Logo & Header: Plain HTML Anchor to Landing Page ('/') */}
+              <a
+                href="/"
+                style={{ textDecoration: 'none', color: 'inherit', display: 'block', cursor: 'pointer' }}
+                title="Return to Landing Page"
               >
-                <span className="kx-logo-letter">C2C</span>
-              </div>
+                <div className="kx-logo-wrap">
+                  <span className="kx-logo-letter">C2C</span>
+                </div>
 
-              {/* Header */}
-              <div className="kx-header">
-                <h1 className="kx-title">Campus to Career</h1>
-                <p className="kx-subtitle">Placement &amp; Internship Governance Portal</p>
-              </div>
+                <div className="kx-header">
+                  <h1 className="kx-title">Campus to Career</h1>
+                  <p className="kx-subtitle">Placement &amp; Internship Governance Portal</p>
+                </div>
+              </a>
 
               {/* Quick Demo Autofill Bar */}
               <div className="kx-demo-bar">
@@ -834,10 +831,6 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                 <a
                   href="/"
                   className="kx-back-home"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    window.location.href = '/'
-                  }}
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="15 18 9 12 15 6" />
