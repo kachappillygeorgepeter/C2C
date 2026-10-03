@@ -282,12 +282,13 @@ export default function App() {
     showToast(`Welcome back, ${user.name}!`)
   }
 
-  // Sign out handler
+  // Sign out handler - Full browser navigation to '/'
   const handleSignOut = () => {
     setCurrentUser(null)
     tokenStorage.remove()
     tokenStorage.removeUser()
     setMobileMenuOpen(false)
+    window.location.href = '/'
   }
 
   // Not logged in -> Render Sign In
@@ -583,7 +584,11 @@ export default function App() {
         <div>
           {/* Logo & Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '18px', borderBottom: '1px solid #E2E8F0', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+              title="Return to Home"
+              onClick={() => { window.location.href = '/' }}
+            >
               <div style={{ width: '38px', height: '38px', borderRadius: '8px', backgroundColor: '#0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '15px', color: '#FFFFFF' }}>
                 C2C
               </div>

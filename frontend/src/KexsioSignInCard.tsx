@@ -623,6 +623,23 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           border-top: 1px solid #F1F5F9;
           padding-top: 14px;
         }
+
+        .kx-back-home {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 14px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #475569;
+          text-decoration: none;
+          cursor: pointer;
+          transition: color 0.15s ease;
+        }
+        .kx-back-home:hover {
+          color: #0F172A;
+          text-decoration: underline;
+        }
       `}</style>
 
       {/* Ambient background animations */}
@@ -662,7 +679,15 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
             <div className="kx-card-content">
               {/* Brand Logo: C2C */}
-              <div className="kx-logo-wrap">
+              <div
+                className="kx-logo-wrap"
+                role="button"
+                tabIndex={0}
+                title="Return to Home"
+                onClick={() => { window.location.href = '/' }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { window.location.href = '/' } }}
+                style={{ cursor: 'pointer' }}
+              >
                 <span className="kx-logo-letter">C2C</span>
               </div>
 
@@ -804,6 +829,22 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                   )}
                 </button>
               </form>
+
+              <div style={{ textAlign: 'center', marginTop: '14px' }}>
+                <a
+                  href="/"
+                  className="kx-back-home"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    window.location.href = '/'
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  <span>Back to Home</span>
+                </a>
+              </div>
 
               <div className="kx-footer-info">
                 <span>C2C Placement System &bull; Enterprise RBAC Enabled</span>
