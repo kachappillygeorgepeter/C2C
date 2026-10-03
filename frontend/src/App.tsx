@@ -345,7 +345,16 @@ export default function App() {
   const [studentCgpa, setStudentCgpa] = useState<number>(8.2)
   const [studentBacklogs, setStudentBacklogs] = useState<number>(0)
   const [studentDept, setStudentDept] = useState<string>('CSE')
-  const [appliedJobs, setAppliedJobs] = useState<string[]>(['job-1'])
+  const [studentTenthPercent, setStudentTenthPercent] = useState<number>(88)
+  const [studentTwelfthPercent, setStudentTwelfthPercent] = useState<number>(85)
+  const [eligibilityTabFilter, setEligibilityTabFilter] = useState<'ALL' | 'ELIGIBLE' | 'GAP_ANALYSIS'>('ALL')
+  const [appliedJobs, setAppliedJobs] = useState<string[]>(['job-1', 'job-2', 'job-6', 'job-7'])
+  const [applicationStatusMap, setApplicationStatusMap] = useState<Record<string, { status: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED', stage: string, appliedDate: string }>>({
+    'job-1': { status: 'SHORTLISTED', stage: 'Technical Round 1 Scheduled', appliedDate: '24 Sep 2026' },
+    'job-2': { status: 'WAITING', stage: 'Resume Under Review', appliedDate: '28 Sep 2026' },
+    'job-6': { status: 'ACCEPTED', stage: 'Offer Letter Released • ₹18 - 24 LPA', appliedDate: '18 Sep 2026' },
+    'job-7': { status: 'REJECTED', stage: 'Criteria Mismatch (CGPA / Profile)', appliedDate: '21 Sep 2026' }
+  })
 
   // Recruiter State
   const [applicants, setApplicants] = useState<ApplicationItem[]>(initialApplicants)
@@ -456,10 +465,32 @@ export default function App() {
           const jobIds = appsRes.data.map((a: any) => a.jobId)
           setAppliedJobs(jobIds)
           const idMap: Record<string, string> = {}
+          const statusMap: Record<string, { status: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED', stage: string, appliedDate: string }> = {}
           appsRes.data.forEach((a: any) => {
             idMap[a.jobId] = a.id
+            let normalizedStatus: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED' = 'WAITING'
+            let stageDesc = 'Application Under Review'
+            if (a.status === 'OFFERED' || a.status === 'ACCEPTED') {
+              normalizedStatus = 'ACCEPTED'
+              stageDesc = 'Offer Letter Released'
+            } else if (a.status === 'REJECTED') {
+              normalizedStatus = 'REJECTED'
+              stageDesc = 'Profile Criteria Not Met'
+            } else if (a.status === 'SHORTLISTED' || a.status === 'INTERVIEW_SCHEDULED') {
+              normalizedStatus = 'SHORTLISTED'
+              stageDesc = a.status === 'INTERVIEW_SCHEDULED' ? 'Interview Round Scheduled' : 'Shortlisted for Assessment'
+            } else {
+              normalizedStatus = 'WAITING'
+              stageDesc = 'Awaiting Recruiter Screening'
+            }
+            statusMap[a.jobId] = {
+              status: normalizedStatus,
+              stage: stageDesc,
+              appliedDate: a.appliedAt ? new Date(a.appliedAt).toLocaleDateString() : 'Recent'
+            }
           })
           setApplicationIdMap(idMap)
+          setApplicationStatusMap(prev => ({ ...prev, ...statusMap }))
         }
       } else if (currentUser.role === 'RECRUITER') {
         // Fetch recruiter jobs
@@ -655,14 +686,29 @@ export default function App() {
       setApplicationIdMap(prev => ({ ...prev, [jobId]: res.data.id }))
     }
 
+    // Anything new should be WAITING
+    setApplicationStatusMap(prev => ({
+      ...prev,
+      [jobId]: {
+        status: 'WAITING',
+        stage: 'Application Submitted • Awaiting Recruiter Review',
+        appliedDate: 'Just Now'
+      }
+    }))
+
     setAppliedJobs([...appliedJobs, jobId])
     setJobs(jobs.map((j) => (j.id === jobId ? { ...j, applicantsCount: j.applicantsCount + 1 } : j)))
-    showToast('Application successfully submitted!')
+    showToast('Application successfully submitted! Status: WAITING')
   }
 
   // Student Withdraw Application
   const handleWithdrawApplication = async (jobId: string) => {
     setAppliedJobs(appliedJobs.filter((id) => id !== jobId))
+    setApplicationStatusMap(prev => {
+      const copy = { ...prev }
+      delete copy[jobId]
+      return copy
+    })
     const appId = applicationIdMap[jobId] || jobId
     await apiFetch(`/students/applications/${appId}/withdraw`, {
       method: 'POST'
@@ -1670,42 +1716,165 @@ export default function App() {
 
               {studentTab === 'my-applications' && (
                 <div className="light-card" style={{ padding: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
-                      <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, fontFamily: 'Outfit, Inter, sans-serif' }}>Your Active Applications</h3>
-                      <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>Track recruitment stages for submitted drives.</p>
+                      <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'Outfit, Inter, sans-serif', color: '#0F172A' }}>
+                        Your Applications Tracker
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#64748B', margin: '3px 0 0 0' }}>
+                        Track recruitment stages, interview schedules, and real-time decision updates.
+                      </p>
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
-                      {appliedJobs.length} active
-                    </span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#334155', backgroundColor: '#F1F5F9', padding: '6px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
+                        Total Applied: <strong>{appliedJobs.length}</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Summary Metric Counters */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '22px' }}>
+                    {[
+                      { label: 'Waiting / Review', count: appliedJobs.filter(id => applicationStatusMap[id]?.status === 'WAITING').length, color: '#D97706', bg: '#FEF3C7' },
+                      { label: 'Shortlisted', count: appliedJobs.filter(id => applicationStatusMap[id]?.status === 'SHORTLISTED').length, color: '#2563EB', bg: '#DBEAFE' },
+                      { label: 'Accepted / Offered', count: appliedJobs.filter(id => applicationStatusMap[id]?.status === 'ACCEPTED').length, color: '#059669', bg: '#D1FAE5' },
+                      { label: 'Rejected', count: appliedJobs.filter(id => applicationStatusMap[id]?.status === 'REJECTED').length, color: '#DC2626', bg: '#FEE2E2' },
+                    ].map((m) => (
+                      <div key={m.label} style={{ padding: '12px 14px', borderRadius: '8px', backgroundColor: '#FFFFFF', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: '#64748B' }}>{m.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>{m.count}</span>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: m.color }} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   {appliedJobs.length === 0 ? (
-                    <div style={{ padding: '30px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>
-                      You haven't submitted any applications yet. Explore active drives to apply.
+                    <div style={{ padding: '40px 20px', textAlign: 'center', color: '#64748B', fontSize: '13px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px dashed #CBD5E1' }}>
+                      <div style={{ fontWeight: '700', fontSize: '15px', color: '#0F172A', marginBottom: '4px' }}>No active applications submitted</div>
+                      Explore active drives above to submit applications for engineering placements.
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {appliedJobs.map((jId) => {
                         const j = jobs.find((item) => item.id === jId)
                         if (!j) return null
+                        const appInfo = applicationStatusMap[jId] || {
+                          status: 'WAITING',
+                          stage: 'Application Submitted • Awaiting Recruiter Review',
+                          appliedDate: 'Recent'
+                        }
+
+                        // Badge theme styles
+                        const badgeStyle = {
+                          WAITING: {
+                            bg: '#FEF3C7',
+                            color: '#92400E',
+                            border: '#FDE68A',
+                            dot: '#D97706',
+                            label: 'WAITING / IN REVIEW'
+                          },
+                          ACCEPTED: {
+                            bg: '#D1FAE5',
+                            color: '#065F46',
+                            border: '#A7F3D0',
+                            dot: '#10B981',
+                            label: 'OFFER ACCEPTED'
+                          },
+                          SHORTLISTED: {
+                            bg: '#DBEAFE',
+                            color: '#1E40AF',
+                            border: '#BFDBFE',
+                            dot: '#3B82F6',
+                            label: 'SHORTLISTED'
+                          },
+                          REJECTED: {
+                            bg: '#FEE2E2',
+                            color: '#991B1B',
+                            border: '#FECACA',
+                            dot: '#EF4444',
+                            label: 'NOT SELECTED'
+                          }
+                        }[appInfo.status]
+
                         return (
-                          <div key={jId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', flexWrap: 'wrap', gap: '8px' }}>
-                            <div>
-                              <div style={{ fontWeight: '700', fontSize: '14px', color: '#0F172A' }}>{j.title}</div>
-                              <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>{j.company} &bull; {j.salary}</div>
+                          <div
+                            key={jId}
+                            style={{
+                              padding: '16px 20px',
+                              borderRadius: '10px',
+                              border: `1px solid ${appInfo.status === 'ACCEPTED' ? '#A7F3D0' : appInfo.status === 'REJECTED' ? '#FECACA' : '#E2E8F0'}`,
+                              backgroundColor: appInfo.status === 'ACCEPTED' ? '#F0FDF4' : appInfo.status === 'REJECTED' ? '#FFFBFB' : '#FFFFFF',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '12px',
+                              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', backgroundColor: '#F1F5F9', color: '#0F172A', border: '1px solid #CBD5E1' }}>
+                                    {j.jobType.replace('_', ' ')}
+                                  </span>
+                                  <span style={{ fontSize: '11px', color: '#64748B' }}>
+                                    Applied: <strong>{appInfo.appliedDate}</strong>
+                                  </span>
+                                </div>
+                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0F172A', fontFamily: 'Outfit, Inter, sans-serif' }}>
+                                  {j.title}
+                                </h4>
+                                <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>
+                                  {j.company} &bull; {j.location} &bull; <strong>{j.salary}</strong>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    color: badgeStyle.color,
+                                    backgroundColor: badgeStyle.bg,
+                                    border: `1px solid ${badgeStyle.border}`,
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    letterSpacing: '0.02em'
+                                  }}
+                                >
+                                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: badgeStyle.dot }} />
+                                  {badgeStyle.label}
+                                </span>
+
+                                {appInfo.status !== 'ACCEPTED' && (
+                                  <button
+                                    onClick={() => handleWithdrawApplication(jId)}
+                                    className="outline-btn"
+                                    style={{ padding: '5px 10px', fontSize: '11px', color: '#64748B' }}
+                                    title="Withdraw Application"
+                                  >
+                                    Withdraw
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '11px', fontWeight: '700', color: '#0F172A', backgroundColor: '#FFFFFF', border: '1px solid #CBD5E1', padding: '4px 10px', borderRadius: '6px' }}>
-                                SHORTLISTED
+
+                            {/* Current Stage Indicator */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', padding: '8px 12px', borderRadius: '6px', border: '1px solid #F1F5F9', fontSize: '12px' }}>
+                              <div style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: '600' }}>Current Stage:</span>
+                                <span style={{ color: appInfo.status === 'ACCEPTED' ? '#059669' : appInfo.status === 'REJECTED' ? '#DC2626' : '#0F172A', fontWeight: '600' }}>
+                                  {appInfo.stage}
+                                </span>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+                                Ref #{jId.toUpperCase()}
                               </span>
-                              <button
-                                onClick={() => handleWithdrawApplication(jId)}
-                                className="outline-btn"
-                                style={{ padding: '4px 8px', fontSize: '11px', color: '#64748B' }}
-                              >
-                                Withdraw
-                              </button>
                             </div>
                           </div>
                         )
@@ -1715,84 +1884,346 @@ export default function App() {
                 </div>
               )}
 
-              {studentTab === 'eligibility' && (
-                <div className="light-card" style={{ padding: '24px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '20px' }}>
-                    <div>
-                      <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px 0', fontFamily: 'Outfit, Inter, sans-serif' }}>
-                        Live Academic Parameter Simulator &amp; Profile Sync
-                      </h3>
-                      <p style={{ fontSize: '12px', color: '#64748B', margin: 0 }}>
-                        Adjust your profile metrics to preview eligibility across all campus drives in real time.
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleSaveStudentProfile}
-                      disabled={isSavingProfile}
-                      className="solid-btn"
-                      style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                      {isSavingProfile ? 'Saving...' : 'Save & Sync Profile'}
-                    </button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
-                        <span>Current CGPA</span>
-                        <span style={{ color: '#0F172A', fontSize: '14px' }}>{studentCgpa.toFixed(1)}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="5.0"
-                        max="10.0"
-                        step="0.1"
-                        value={studentCgpa}
-                        onChange={(e) => setStudentCgpa(parseFloat(e.target.value))}
-                        style={{ width: '100%', accentColor: '#0F172A', cursor: 'pointer' }}
-                      />
-                    </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>Active Backlogs</span>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {[0, 1, 2].map((n) => (
+              {studentTab === 'eligibility' && (() => {
+                const evaluatedJobs = jobs.map((job) => {
+                  const evalResult = checkJobEligibility(job)
+                  const cgpaDiff = (job.minCgpa - studentCgpa).toFixed(2)
+                  const backlogDiff = studentBacklogs - job.maxBacklogs
+                  const isDeptMatch = job.allowedDepts.includes(studentDept)
+                  return {
+                    job,
+                    evalResult,
+                    cgpaDiff: parseFloat(cgpaDiff),
+                    backlogDiff,
+                    isDeptMatch
+                  }
+                })
+
+                const eligibleList = evaluatedJobs.filter(e => e.evalResult.eligible)
+                const ineligibleList = evaluatedJobs.filter(e => !e.evalResult.eligible)
+                const eligibilityPercentage = jobs.length > 0 ? Math.round((eligibleList.length / jobs.length) * 100) : 0
+
+                const displayedList =
+                  eligibilityTabFilter === 'ELIGIBLE'
+                    ? eligibleList
+                    : eligibilityTabFilter === 'GAP_ANALYSIS'
+                    ? ineligibleList
+                    : evaluatedJobs
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    {/* Top Simulator & Profile Sync Control Card */}
+                    <div className="light-card" style={{ padding: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '800', backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '3px 8px', borderRadius: '4px', border: '1px solid #BFDBFE' }}>
+                              PLACEMENT READINESS SUITE
+                            </span>
+                          </div>
+                          <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0, fontFamily: 'Outfit, Inter, sans-serif', color: '#0F172A' }}>
+                            Campus Eligibility Simulator &amp; Gap Analyzer
+                          </h3>
+                          <p style={{ fontSize: '12px', color: '#64748B', margin: '4px 0 0 0' }}>
+                            Simulate future semesters, identify cut-off gaps for Dream/Tier-1 offers, and benchmark against all {jobs.length} campus drives.
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
                           <button
-                            key={n}
-                            type="button"
-                            onClick={() => setStudentBacklogs(n)}
-                            style={{
-                              flex: 1,
-                              padding: '7px',
-                              borderRadius: '6px',
-                              border: '1px solid #CBD5E1',
-                              backgroundColor: studentBacklogs === n ? '#0F172A' : '#FFFFFF',
-                              color: studentBacklogs === n ? '#FFFFFF' : '#0F172A',
-                              fontWeight: '700',
-                              fontSize: '12px',
-                              cursor: 'pointer'
-                            }}
+                            onClick={handleSaveStudentProfile}
+                            disabled={isSavingProfile}
+                            className="solid-btn"
+                            style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
                           >
-                            {n}
+                            {isSavingProfile ? 'Saving...' : 'Save & Sync Profile'}
                           </button>
-                        ))}
+                        </div>
+                      </div>
+
+                      {/* Interactive Simulator Sliders & Inputs */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '18px', backgroundColor: '#F8FAFC', padding: '18px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                            <span style={{ color: '#334155' }}>Simulated CGPA</span>
+                            <span style={{ color: '#0F172A', fontSize: '14px', fontWeight: '800' }}>{studentCgpa.toFixed(1)} / 10.0</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="5.0"
+                            max="10.0"
+                            step="0.1"
+                            value={studentCgpa}
+                            onChange={(e) => setStudentCgpa(parseFloat(e.target.value))}
+                            style={{ width: '100%', accentColor: '#0F172A', cursor: 'pointer' }}
+                          />
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94A3B8', marginTop: '2px' }}>
+                            <span>5.0 Pass</span>
+                            <span>7.5 First Class</span>
+                            <span>8.5 Distinction</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: '#334155' }}>Active Backlogs</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {[0, 1, 2, 3].map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setStudentBacklogs(n)}
+                                style={{
+                                  flex: 1,
+                                  padding: '7px 4px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #CBD5E1',
+                                  backgroundColor: studentBacklogs === n ? '#0F172A' : '#FFFFFF',
+                                  color: studentBacklogs === n ? '#FFFFFF' : '#0F172A',
+                                  fontWeight: '700',
+                                  fontSize: '12px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {n === 0 ? '0 (Clean)' : n}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px', color: '#334155' }}>Engineering Branch</span>
+                          <select
+                            value={studentDept}
+                            onChange={(e) => setStudentDept(e.target.value)}
+                            className="light-input"
+                            style={{ width: '100%', padding: '8px 10px', fontSize: '12px', fontWeight: '600' }}
+                          >
+                            <option value="CSE">Computer Science (CSE)</option>
+                            <option value="ISE">Information Science (ISE)</option>
+                            <option value="ECE">Electronics (ECE)</option>
+                            <option value="MECH">Mechanical (MECH)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
+                            <span style={{ color: '#334155' }}>10th / 12th Aggregate</span>
+                            <span style={{ color: '#0F172A', fontSize: '13px', fontWeight: '700' }}>{studentTenthPercent}% / {studentTwelfthPercent}%</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <input
+                              type="number"
+                              min="50"
+                              max="100"
+                              value={studentTenthPercent}
+                              onChange={(e) => setStudentTenthPercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                              className="light-input"
+                              style={{ width: '50%', padding: '6px 8px', fontSize: '12px' }}
+                              title="10th Board %"
+                            />
+                            <input
+                              type="number"
+                              min="50"
+                              max="100"
+                              value={studentTwelfthPercent}
+                              onChange={(e) => setStudentTwelfthPercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                              className="light-input"
+                              style={{ width: '50%', padding: '6px 8px', fontSize: '12px' }}
+                              title="12th / Diploma %"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <span style={{ display: 'block', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>Branch</span>
-                      <select
-                        value={studentDept}
-                        onChange={(e) => setStudentDept(e.target.value)}
-                        className="light-input"
-                        style={{ width: '100%', padding: '7px 10px', fontSize: '12px', fontWeight: '600' }}
-                      >
-                        <option value="CSE">CSE (Computer Science)</option>
-                        <option value="ISE">ISE (Information Science)</option>
-                        <option value="ECE">ECE (Electronics &amp; Comm)</option>
-                        <option value="MECH">MECH (Mechanical)</option>
-                      </select>
+
+                    {/* Scorecard Metric Tiles */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+                      <div className="light-card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Campus Reach Ratio
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ fontSize: '26px', fontWeight: '800', color: eligibilityPercentage >= 60 ? '#16A34A' : eligibilityPercentage >= 30 ? '#D97706' : '#DC2626' }}>
+                            {eligibilityPercentage}%
+                          </span>
+                          <span style={{ fontSize: '13px', color: '#64748B' }}>
+                            ({eligibleList.length} of {jobs.length} drives)
+                          </span>
+                        </div>
+                        <div style={{ width: '100%', height: '6px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden', marginTop: '4px' }}>
+                          <div
+                            style={{
+                              width: `${eligibilityPercentage}%`,
+                              height: '100%',
+                              backgroundColor: eligibilityPercentage >= 60 ? '#16A34A' : eligibilityPercentage >= 30 ? '#D97706' : '#DC2626',
+                              transition: 'width 0.3s ease'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="light-card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Tier-1 &amp; Dream Drives (≥ 8.0 CGPA)
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ fontSize: '26px', fontWeight: '800', color: '#0F172A' }}>
+                            {jobs.filter(j => j.minCgpa >= 8.0 && j.allowedDepts.includes(studentDept)).length}
+                          </span>
+                          <span style={{ fontSize: '12px', color: studentCgpa >= 8.0 ? '#16A34A' : '#D97706', fontWeight: '700' }}>
+                            {studentCgpa >= 8.0 ? 'Unlocked • Fully Qualified' : `Needs +${(8.0 - studentCgpa).toFixed(1)} CGPA`}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11px', color: '#64748B' }}>Microsoft, Google Cloud, Adobe &amp; Goldman Sachs</span>
+                      </div>
+
+                      <div className="light-card" style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                          Backlog Health
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                          <span style={{ fontSize: '26px', fontWeight: '800', color: studentBacklogs === 0 ? '#16A34A' : '#DC2626' }}>
+                            {studentBacklogs === 0 ? 'Zero Standing' : `${studentBacklogs} Backlog${studentBacklogs > 1 ? 's' : ''}`}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: '11px', color: studentBacklogs === 0 ? '#16A34A' : '#DC2626', fontWeight: '600' }}>
+                          {studentBacklogs === 0 ? '100% MNC policy compliant' : 'May disqualify from Tier-1 product drives'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Detailed Company-by-Company Eligibility Matrix & Action Plan */}
+                    <div className="light-card" style={{ padding: '22px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0F172A', fontFamily: 'Outfit, Inter, sans-serif' }}>
+                            Live Company Eligibility &amp; Gap Matrix
+                          </h4>
+                          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748B' }}>
+                            Shows exact qualification criteria, branch restrictions, and target gap delta for every campus drive.
+                          </p>
+                        </div>
+
+                        {/* Filter Tabs */}
+                        <div style={{ display: 'flex', gap: '6px', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '8px' }}>
+                          {[
+                            { id: 'ALL', label: `All Drives (${evaluatedJobs.length})` },
+                            { id: 'ELIGIBLE', label: `Eligible (${eligibleList.length})` },
+                            { id: 'GAP_ANALYSIS', label: `Action Needed (${ineligibleList.length})` }
+                          ].map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => setEligibilityTabFilter(t.id as any)}
+                              style={{
+                                border: 'none',
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                backgroundColor: eligibilityTabFilter === t.id ? '#FFFFFF' : 'transparent',
+                                color: eligibilityTabFilter === t.id ? '#0F172A' : '#64748B',
+                                boxShadow: eligibilityTabFilter === t.id ? '0 1px 2px rgba(15,23,42,0.08)' : 'none',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Matrix Grid */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {displayedList.map(({ job, evalResult, cgpaDiff, backlogDiff, isDeptMatch }) => {
+                          const isApplied = appliedJobs.includes(job.id)
+
+                          return (
+                            <div
+                              key={job.id}
+                              style={{
+                                padding: '14px 18px',
+                                borderRadius: '8px',
+                                border: `1px solid ${evalResult.eligible ? '#E2E8F0' : '#FEE2E2'}`,
+                                backgroundColor: evalResult.eligible ? '#FFFFFF' : '#FFFDFD',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                gap: '12px',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <div style={{ flex: '1 1 260px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B' }}>{job.company}</span>
+                                  <span style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', backgroundColor: '#F1F5F9', padding: '1px 6px', borderRadius: '4px' }}>
+                                    {job.salary}
+                                  </span>
+                                </div>
+                                <div style={{ fontWeight: '700', fontSize: '14px', color: '#0F172A' }}>
+                                  {job.title}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>
+                                  Required: Min <strong>{job.minCgpa} CGPA</strong> &bull; Max <strong>{job.maxBacklogs} Backlogs</strong> &bull; Branches: <strong>{job.allowedDepts.join(', ')}</strong>
+                                </div>
+                              </div>
+
+                              {/* Eligibility Status & Action Plan */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                                <div style={{ textAlign: 'right', minWidth: '170px' }}>
+                                  {evalResult.eligible ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '800', color: '#16A34A', backgroundColor: '#DCFCE7', padding: '3px 8px', borderRadius: '4px' }}>
+                                        &bull; FULLY ELIGIBLE
+                                      </span>
+                                      <span style={{ fontSize: '11px', color: '#16A34A', marginTop: '2px' }}>
+                                        Exceeds cutoff by +{(studentCgpa - job.minCgpa).toFixed(1)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontWeight: '800', color: '#DC2626', backgroundColor: '#FEE2E2', padding: '3px 8px', borderRadius: '4px' }}>
+                                        &bull; GAP DETECTED
+                                      </span>
+                                      <span style={{ fontSize: '11px', color: '#DC2626', marginTop: '2px', fontWeight: '600' }}>
+                                        {cgpaDiff > 0 && `Need +${cgpaDiff.toFixed(1)} CGPA `}
+                                        {backlogDiff > 0 && `Clear ${backlogDiff} Backlog `}
+                                        {!isDeptMatch && `Only ${job.allowedDepts.join('/')}`}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div>
+                                  {isApplied ? (
+                                    <span style={{ fontSize: '11px', fontWeight: '700', padding: '6px 12px', borderRadius: '6px', backgroundColor: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1' }}>
+                                      Applied
+                                    </span>
+                                  ) : (
+                                    <button
+                                      disabled={!evalResult.eligible}
+                                      onClick={() => handleApply(job.id)}
+                                      className={evalResult.eligible ? 'solid-btn' : 'outline-btn'}
+                                      style={{
+                                        padding: '6px 12px',
+                                        fontSize: '11px',
+                                        opacity: evalResult.eligible ? 1 : 0.5,
+                                        cursor: evalResult.eligible ? 'pointer' : 'not-allowed'
+                                      }}
+                                    >
+                                      {evalResult.eligible ? 'One-Click Apply' : 'Ineligible'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
             </div>
           )}
 
