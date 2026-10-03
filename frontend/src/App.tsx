@@ -110,7 +110,7 @@ const initialJobs: JobItem[] = [
     openings: 12,
     minCgpa: 8.0,
     maxBacklogs: 0,
-    allowedDepts: ['CSE', 'ISE', 'ECE'],
+    allowedDepts: ['CSE'],
     description: 'Design and build enterprise cloud systems and distributed microservices with high availability.',
     applicantsCount: 48
   },
@@ -125,7 +125,7 @@ const initialJobs: JobItem[] = [
     openings: 8,
     minCgpa: 7.5,
     maxBacklogs: 0,
-    allowedDepts: ['CSE', 'ISE'],
+    allowedDepts: ['ISE'],
     description: 'Work alongside data scientists training LLM pipelines and automated retrieval engines.',
     applicantsCount: 32
   },
@@ -140,9 +140,114 @@ const initialJobs: JobItem[] = [
     openings: 15,
     minCgpa: 7.0,
     maxBacklogs: 1,
-    allowedDepts: ['CSE', 'ISE', 'ECE', 'MECH'],
+    allowedDepts: ['ECE'],
     description: 'Develop next-generation routing telemetry, SDN fabrics, and resilient enterprise cloud networks.',
     applicantsCount: 65
+  },
+  {
+    id: 'job-4',
+    title: 'Cloud Infrastructure & SRE Engineer',
+    company: 'Google Cloud India',
+    jobType: 'FULL_TIME',
+    location: 'Bengaluru / Hyderabad',
+    salary: '₹26 - 36 LPA',
+    deadline: '2026-11-05',
+    openings: 10,
+    minCgpa: 8.2,
+    maxBacklogs: 0,
+    allowedDepts: ['CSE'],
+    description: 'Scale planet-scale distributed storage and Kubernetes infrastructure with extreme reliability guarantees.',
+    applicantsCount: 54
+  },
+  {
+    id: 'job-5',
+    title: 'Quantitative Systems & FinTech Developer',
+    company: 'Goldman Sachs',
+    jobType: 'INTERNSHIP_PPO',
+    location: 'Bengaluru, KA',
+    salary: '₹1.25L/mo + 30 LPA PPO',
+    deadline: '2026-10-25',
+    openings: 6,
+    minCgpa: 8.5,
+    maxBacklogs: 0,
+    allowedDepts: ['ISE'],
+    description: 'Engineer ultra-low latency trading algorithms, quantitative risk models, and streaming transaction engines.',
+    applicantsCount: 41
+  },
+  {
+    id: 'job-6',
+    title: 'Embedded Firmware & Hardware Engineer',
+    company: 'Texas Instruments',
+    jobType: 'FULL_TIME',
+    location: 'Bengaluru, KA',
+    salary: '₹18 - 24 LPA',
+    deadline: '2026-11-10',
+    openings: 14,
+    minCgpa: 7.2,
+    maxBacklogs: 1,
+    allowedDepts: ['ECE'],
+    description: 'Architect silicon board bring-up, RTOS driver stacks, and micro-controller peripherals for edge devices.',
+    applicantsCount: 38
+  },
+  {
+    id: 'job-7',
+    title: 'EV Powertrain & Autonomous Systems Engineer',
+    company: 'Tata Motors EV Tech',
+    jobType: 'FULL_TIME',
+    location: 'Pune / Bengaluru',
+    salary: '₹14 - 18 LPA',
+    deadline: '2026-11-12',
+    openings: 20,
+    minCgpa: 7.0,
+    maxBacklogs: 1,
+    allowedDepts: ['MECH'],
+    description: 'Develop regenerative braking, battery thermal dynamics, and CAN-bus telemetry for next-gen electric vehicles.',
+    applicantsCount: 49
+  },
+  {
+    id: 'job-8',
+    title: 'Distributed Database Systems Intern',
+    company: 'Oracle Cloud Infrastructure',
+    jobType: 'INTERNSHIP',
+    location: 'Hyderabad, TS',
+    salary: '₹95,000/mo Internship',
+    deadline: '2026-11-15',
+    openings: 12,
+    minCgpa: 7.5,
+    maxBacklogs: 0,
+    allowedDepts: ['ISE'],
+    description: 'Contribute to distributed query optimizers, transaction consensus protocols, and NVMe-backed storage engines.',
+    applicantsCount: 29
+  },
+  {
+    id: 'job-9',
+    title: 'Industrial Automation & Robotics Specialist',
+    company: 'Siemens Digital Industries',
+    jobType: 'FULL_TIME',
+    location: 'Bengaluru, KA',
+    salary: '₹15 - 21 LPA',
+    deadline: '2026-11-20',
+    openings: 10,
+    minCgpa: 7.0,
+    maxBacklogs: 0,
+    allowedDepts: ['MECH'],
+    description: 'Build industrial cyber-physical automation frameworks, digital twins, and PLC telemetry communication meshes.',
+    applicantsCount: 23
+  },
+  {
+    id: 'job-10',
+    title: 'Applied Generative Media & Vision Engineer',
+    company: 'Adobe Systems',
+    jobType: 'FULL_TIME',
+    location: 'Bengaluru / Noida',
+    salary: '₹24 - 34 LPA',
+    deadline: '2026-11-25',
+    openings: 8,
+    minCgpa: 8.0,
+    maxBacklogs: 0,
+    allowedDepts: ['CSE'],
+    description: 'Develop real-time neural rendering pipelines, diffusion models, and next-generation creative cloud web apps.',
+    applicantsCount: 67
   }
 ]
 
@@ -704,6 +809,17 @@ export default function App() {
     showToast('Student academic verification status updated.')
   }
 
+  // Department availability counts for Course / Branch selection
+  const deptJobCounts = useMemo(() => {
+    return {
+      ALL: jobs.length,
+      CSE: jobs.filter(j => j.allowedDepts.includes('CSE')).length,
+      ISE: jobs.filter(j => j.allowedDepts.includes('ISE')).length,
+      ECE: jobs.filter(j => j.allowedDepts.includes('ECE')).length,
+      MECH: jobs.filter(j => j.allowedDepts.includes('MECH')).length
+    }
+  }, [jobs])
+
   // Filtered Job List for Search & Department
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -1080,9 +1196,6 @@ export default function App() {
                 <div style={{ fontWeight: '800', fontSize: '15px', color: '#0F172A', letterSpacing: '-0.02em', fontFamily: 'Outfit, Inter, sans-serif' }}>
                   C2C Portal
                 </div>
-                <span style={{ fontSize: '10px', fontWeight: '700', backgroundColor: '#F1F5F9', color: '#334155', padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.02em', display: 'inline-block', marginTop: '2px' }}>
-                  {currentUser.role} ROUTE
-                </span>
               </div>
             </div>
 
@@ -1314,10 +1427,10 @@ export default function App() {
           <button
             onClick={handleSignOut}
             className="outline-btn c2c-sidebar-text"
-            title="Switch Role / Sign Out"
+            title="Sign Out"
             style={{ marginTop: '10px', width: '100%', padding: '7px', fontSize: '11px', fontWeight: '700' }}
           >
-            Switch Role / Sign Out
+            Sign Out
           </button>
         </div>
       </aside>
@@ -1425,11 +1538,6 @@ export default function App() {
                 </div>
               )}
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#475569', backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#10B981', display: 'inline-block' }} />
-              <span>API Status: <strong>Live</strong></span>
-            </div>
           </div>
         </header>
 
@@ -1464,18 +1572,24 @@ export default function App() {
                         </button>
                       )}
                     </div>
-                    <select
-                      value={selectedDeptFilter}
-                      onChange={(e) => setSelectedDeptFilter(e.target.value)}
-                      className="light-input"
-                      style={{ padding: '9px 12px', fontSize: '12px', fontWeight: '600' }}
-                    >
-                      <option value="ALL">All Engineering Departments</option>
-                      <option value="CSE">Computer Science (CSE)</option>
-                      <option value="ISE">Information Science (ISE)</option>
-                      <option value="ECE">Electronics (ECE)</option>
-                      <option value="MECH">Mechanical (MECH)</option>
-                    </select>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <select
+                        value={selectedDeptFilter}
+                        onChange={(e) => setSelectedDeptFilter(e.target.value)}
+                        className="light-input"
+                        style={{ padding: '9px 12px', fontSize: '12px', fontWeight: '600' }}
+                        aria-label="Filter by course / department"
+                      >
+                        <option value="ALL">All Departments ({deptJobCounts.ALL} available)</option>
+                        <option value="CSE">Computer Science (CSE) ({deptJobCounts.CSE} available)</option>
+                        <option value="ISE">Information Science (ISE) ({deptJobCounts.ISE} available)</option>
+                        <option value="ECE">Electronics (ECE) ({deptJobCounts.ECE} available)</option>
+                        <option value="MECH">Mechanical (MECH) ({deptJobCounts.MECH} available)</option>
+                      </select>
+                      <span style={{ fontSize: '11px', fontWeight: '700', padding: '6px 10px', borderRadius: '6px', backgroundColor: '#F1F5F9', color: '#334155', border: '1px solid #E2E8F0', whiteSpace: 'nowrap' }}>
+                        {filteredJobs.length} {filteredJobs.length === 1 ? 'drive' : 'drives'} available
+                      </span>
+                    </div>
                   </div>
 
                   {/* Opportunities List */}
