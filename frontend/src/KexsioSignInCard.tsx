@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { apiFetch, tokenStorage, UserSession } from './api'
-import Hyperspeed from './Hyperspeed'
 
 export type UserRole = 'STUDENT' | 'RECRUITER' | 'ADMIN'
 
@@ -646,9 +645,6 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           text-decoration: underline;
         }
       `}</style>
-
-      {/* Hyperspeed: Kexsio-native editorial animated canvas background */}
-      <Hyperspeed />
 
       {/* Ambient background animations */}
       <div className="kx-grid-overlay" aria-hidden="true" />
