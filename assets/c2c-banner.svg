@@ -1,234 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="100%" height="auto">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="100%" height="auto">
   <defs>
-    <!-- Dark Mode Gradients -->
-    <linearGradient id="bgGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#080C14" />
-      <stop offset="50%" stop-color="#0F172A" />
-      <stop offset="100%" stop-color="#1E293B" />
+    <!-- Crisp, sentient clean white/luminescent background gradient -->
+    <linearGradient id="sentientBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="45%" stop-color="#FAFCFF" />
+      <stop offset="100%" stop-color="#F1F5F9" />
     </linearGradient>
 
-    <!-- Light Mode Gradients -->
-    <linearGradient id="bgGradientLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F8FAFC" />
-      <stop offset="50%" stop-color="#EEF2F6" />
-      <stop offset="100%" stop-color="#E2E8F0" />
-    </linearGradient>
+    <!-- Sentient ethereal glow / subtle intelligent halo -->
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.12" />
+      <stop offset="60%" stop-color="#818CF8" stop-opacity="0.04" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
 
-    <!-- Vibrant Brand Accent Gradient -->
-    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8" />
+    <!-- Sentient intelligent gradient for abbreviation mark -->
+    <linearGradient id="markGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
       <stop offset="50%" stop-color="#2563EB" />
       <stop offset="100%" stop-color="#4F46E5" />
     </linearGradient>
 
-    <!-- Text Glow & Metallic Gradient (Dark) -->
-    <linearGradient id="textGradDark" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="50%" stop-color="#F1F5F9" />
-      <stop offset="100%" stop-color="#93C5FD" />
-    </linearGradient>
-
-    <!-- Text Metallic Gradient (Light) -->
-    <linearGradient id="textGradLight" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0F172A" />
-      <stop offset="50%" stop-color="#1E293B" />
-      <stop offset="100%" stop-color="#1D4ED8" />
-    </linearGradient>
-
-    <!-- Shield Badge Borders -->
-    <linearGradient id="badgeBorderDark" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(56, 189, 248, 0.6)" />
-      <stop offset="100%" stop-color="rgba(37, 99, 235, 0.2)" />
-    </linearGradient>
-
-    <linearGradient id="badgeBorderLight" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="rgba(37, 99, 235, 0.5)" />
-      <stop offset="100%" stop-color="rgba(79, 70, 229, 0.2)" />
-    </linearGradient>
-
-    <!-- Glow Filters -->
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <!-- Soft drop shadow for clean depth -->
+    <filter id="softElevation" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0F172A" flood-opacity="0.04" />
     </filter>
   </defs>
 
   <style>
-    /* Default: Dark Theme */
-    .theme-canvas { fill: url(#bgGradientDark); stroke: #334155; }
-    .theme-grid { opacity: 0.12; stroke: #60A5FA; }
-    .theme-orb-1 { fill: #2563EB; opacity: 0.25; }
-    .theme-orb-2 { fill: #38BDF8; opacity: 0.18; }
-    .theme-orb-3 { fill: #4F46E5; opacity: 0.15; }
-    
-    .theme-shield { fill: rgba(15, 23, 42, 0.88); stroke: url(#badgeBorderDark); }
-    .theme-shield-inner { stroke: rgba(255, 255, 255, 0.1); }
-    .theme-status-pill { fill: #0B1120; stroke: rgba(56, 189, 248, 0.45); }
-    .theme-status-text { fill: #38BDF8; }
-    
-    .theme-category-pill { fill: rgba(37, 99, 235, 0.16); stroke: rgba(56, 189, 248, 0.45); }
-    .theme-category-text { fill: #93C5FD; }
-    
-    .theme-title { fill: url(#textGradDark); }
-    .theme-subtitle { fill: #94A3B8; }
-    
-    .theme-chip { fill: rgba(30, 41, 59, 0.85); stroke: #334155; }
-    .theme-chip-text-1 { fill: #E2E8F0; }
-    .theme-chip-text-2 { fill: #38BDF8; }
-    .theme-chip-text-3 { fill: #C084FC; }
-    .theme-chip-text-4 { fill: #34D399; }
-    
-    .theme-stack-label { fill: #64748B; }
-    .theme-stack-val { fill: #CBD5E1; }
-
-    /* Light Theme (matches GitHub light mode or system light mode preference) */
-    @media (prefers-color-scheme: light) {
-      .theme-canvas { fill: url(#bgGradientLight); stroke: #CBD5E1; }
-      .theme-grid { opacity: 0.25; stroke: #94A3B8; }
-      .theme-orb-1 { fill: #60A5FA; opacity: 0.20; }
-      .theme-orb-2 { fill: #38BDF8; opacity: 0.18; }
-      .theme-orb-3 { fill: #818CF8; opacity: 0.15; }
-      
-      .theme-shield { fill: rgba(255, 255, 255, 0.92); stroke: url(#badgeBorderLight); }
-      .theme-shield-inner { stroke: rgba(15, 23, 42, 0.08); }
-      .theme-status-pill { fill: #F1F5F9; stroke: rgba(37, 99, 235, 0.35); }
-      .theme-status-text { fill: #1D4ED8; }
-      
-      .theme-category-pill { fill: rgba(239, 246, 255, 0.95); stroke: rgba(37, 99, 235, 0.35); }
-      .theme-category-text { fill: #1D4ED8; }
-      
-      .theme-title { fill: url(#textGradLight); }
-      .theme-subtitle { fill: #475569; }
-      
-      .theme-chip { fill: rgba(255, 255, 255, 0.9); stroke: #CBD5E1; }
-      .theme-chip-text-1 { fill: #0F172A; }
-      .theme-chip-text-2 { fill: #0284C7; }
-      .theme-chip-text-3 { fill: #7C3AED; }
-      .theme-chip-text-4 { fill: #059669; }
-      
-      .theme-stack-label { fill: #64748B; }
-      .theme-stack-val { fill: #1E293B; }
+    .font-brand {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'SF Pro Display', Roboto, sans-serif;
     }
-
-    .font-display { font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .font-sans { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
   </style>
 
-  <!-- Canvas Background -->
-  <rect width="1200" height="360" rx="20" class="theme-canvas" stroke-width="1.5"/>
+  <!-- Background Base Canvas -->
+  <rect width="1200" height="300" rx="16" fill="url(#sentientBg)" stroke="#E2E8F0" stroke-width="1.2" />
 
-  <!-- High-Tech Blueprint Grid Pattern -->
-  <g class="theme-grid" stroke-width="1">
-    <line x1="0" y1="60" x2="1200" y2="60" stroke-dasharray="4 6" />
-    <line x1="0" y1="120" x2="1200" y2="120" stroke-dasharray="4 6" />
-    <line x1="0" y1="180" x2="1200" y2="180" stroke-dasharray="4 6" />
-    <line x1="0" y1="240" x2="1200" y2="240" stroke-dasharray="4 6" />
-    <line x1="0" y1="300" x2="1200" y2="300" stroke-dasharray="4 6" />
+  <!-- Ethereal Center Glow -->
+  <rect width="1200" height="300" rx="16" fill="url(#centerGlow)" />
 
-    <line x1="120" y1="0" x2="120" y2="360" stroke-dasharray="4 6" />
-    <line x1="240" y1="0" x2="240" y2="360" stroke-dasharray="4 6" />
-    <line x1="360" y1="0" x2="360" y2="360" stroke-dasharray="4 6" />
-    <line x1="480" y1="0" x2="480" y2="360" stroke-dasharray="4 6" />
-    <line x1="600" y1="0" x2="600" y2="360" stroke-dasharray="4 6" />
-    <line x1="720" y1="0" x2="720" y2="360" stroke-dasharray="4 6" />
-    <line x1="840" y1="0" x2="840" y2="360" stroke-dasharray="4 6" />
-    <line x1="960" y1="0" x2="960" y2="360" stroke-dasharray="4 6" />
-    <line x1="1080" y1="0" x2="1080" y2="360" stroke-dasharray="4 6" />
+  <!-- Minimalist Centered Composition -->
+  <g transform="translate(600, 150)" text-anchor="middle">
+    <!-- C2C Primary Abbreviation -->
+    <text
+      x="0"
+      y="-10"
+      class="font-brand"
+      font-size="82"
+      font-weight="900"
+      fill="url(#markGrad)"
+      letter-spacing="14px"
+      filter="url(#softElevation)"
+    >C2C</text>
+
+    <!-- Refined Minimal Separator Line -->
+    <line
+      x1="-90"
+      y1="16"
+      x2="90"
+      y2="16"
+      stroke="#CBD5E1"
+      stroke-width="1.5"
+      stroke-linecap="round"
+    />
+
+    <!-- Full Name in Sentient Slate Neutral -->
+    <text
+      x="0"
+      y="54"
+      class="font-brand"
+      font-size="21"
+      font-weight="500"
+      fill="#334155"
+      letter-spacing="7px"
+    >CAMPUS TO CORPORATE</text>
   </g>
-
-  <!-- Ambient Light Orbs -->
-  <circle cx="160" cy="180" r="140" class="theme-orb-1" filter="url(#glow)"/>
-  <circle cx="1060" cy="90" r="120" class="theme-orb-2" filter="url(#glow)"/>
-  <circle cx="680" cy="310" r="130" class="theme-orb-3" filter="url(#glow)"/>
-
-  <!-- Left: Stylized Emblem / Logo Shield -->
-  <g transform="translate(70, 75)">
-    <!-- Outer Glow & Shield -->
-    <rect x="0" y="0" width="190" height="210" rx="36" class="theme-shield" stroke-width="2.5" filter="url(#softGlow)"/>
-    <rect x="8" y="8" width="174" height="194" rx="28" fill="none" class="theme-shield-inner" stroke-width="1.5" />
-    
-    <!-- Central Gradient Monogram Badge -->
-    <rect x="25" y="25" width="140" height="120" rx="22" fill="url(#primaryGrad)" />
-    <text x="95" y="105" text-anchor="middle" class="font-display" font-weight="900" font-size="52" fill="#FFFFFF" letter-spacing="-2px">C2C</text>
-    
-    <!-- Sub-badge status indicator -->
-    <rect x="35" y="158" width="120" height="28" rx="14" class="theme-status-pill" stroke-width="1.2"/>
-    <circle cx="53" cy="172" r="4.5" fill="#10B981" />
-    <text x="98" y="177" text-anchor="middle" class="font-mono theme-status-text" font-size="11" font-weight="700" letter-spacing="1.5">v2.4 READY</text>
-  </g>
-
-  <!-- Right / Main Content Hierarchy -->
-  <g transform="translate(300, 65)">
-    <!-- Category Pill Badge -->
-    <g transform="translate(0, 10)">
-      <rect x="0" y="0" width="370" height="32" rx="16" class="theme-category-pill" stroke-width="1.2" />
-      <circle cx="16" cy="16" r="4.5" fill="#38BDF8" />
-      <text x="195" y="21" text-anchor="middle" class="font-sans theme-category-text" font-size="12" font-weight="600" letter-spacing="0.8">
-        CAMPUS-TO-CORPORATE • RECRUITMENT SUITE
-      </text>
-    </g>
-
-    <!-- Main Title: C2C Placement & Internship Portal -->
-    <text x="0" y="102" class="font-display theme-title" font-weight="800" font-size="54" letter-spacing="-1.2px">
-      C2C — Campus Portal
-    </text>
-
-    <!-- Subtitle: Value Proposition -->
-    <text x="0" y="142" class="font-sans theme-subtitle" font-weight="400" font-size="18" letter-spacing="-0.2px">
-      Role-Based Campus Recruitment Platform with Server-Enforced Eligibility Engine
-    </text>
-
-    <!-- Feature Tag Chips Bar -->
-    <g transform="translate(0, 172)">
-      <!-- Chip 1: Role-Based (Student / Recruiter / Admin) -->
-      <g transform="translate(0, 0)">
-        <rect x="0" y="0" width="150" height="36" rx="10" class="theme-chip" stroke-width="1.2"/>
-        <text x="75" y="22" text-anchor="middle" class="font-sans theme-chip-text-1" font-size="12.5" font-weight="600">
-          👥 3-Role Portals
-        </text>
-      </g>
-
-      <!-- Chip 2: Eligibility Verification -->
-      <g transform="translate(162, 0)">
-        <rect x="0" y="0" width="180" height="36" rx="10" class="theme-chip" stroke-width="1.2"/>
-        <text x="90" y="22" text-anchor="middle" class="font-sans theme-chip-text-2" font-size="12.5" font-weight="600">
-          ⚡ CGPA Cutoff Engine
-        </text>
-      </g>
-
-      <!-- Chip 3: Interview Pipeline Funnel -->
-      <g transform="translate(354, 0)">
-        <rect x="0" y="0" width="170" height="36" rx="10" class="theme-chip" stroke-width="1.2"/>
-        <text x="85" y="22" text-anchor="middle" class="font-sans theme-chip-text-3" font-size="12.5" font-weight="600">
-          🎯 Hiring Funnel &amp; Meets
-        </text>
-      </g>
-
-      <!-- Chip 4: Enterprise Audit Logs -->
-      <g transform="translate(536, 0)">
-        <rect x="0" y="0" width="175" height="36" rx="10" class="theme-chip" stroke-width="1.2"/>
-        <text x="87" y="22" text-anchor="middle" class="font-sans theme-chip-text-4" font-size="12.5" font-weight="600">
-          🛡️ Institutional Auditing
-        </text>
-      </g>
-    </g>
-
-    <!-- Bottom Tech Pill Highlights -->
-    <g transform="translate(0, 226)">
-      <text x="0" y="14" class="font-mono theme-stack-label" font-size="12" letter-spacing="0.5">
-        CORE STACK:
-      </text>
-      <text x="100" y="14" class="font-mono theme-stack-val" font-size="12" font-weight="600" letter-spacing="0.5">
-        React 18 + TypeScript • Node.js/Express • PostgreSQL 16 • Prisma ORM • Docker
-      </text>
-    </g>
-  </g>
-
-  <!-- Modern Accent Line on Bottom -->
-  <rect x="0" y="354" width="1200" height="6" fill="url(#primaryGrad)" rx="3"/>
 </svg>
