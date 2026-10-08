@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { Routes, Route, Navigate, useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import KexsioSignInCard, { UserRole } from './KexsioSignInCard'
+import PostLoginLandingPage from './PostLoginLandingPage'
 import { apiFetch, tokenStorage, UserSession, uploadResume } from './api'
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import ErrorBoundary from './ErrorBoundary'
+import {
+  ROLE_NAVIGATION_CONFIG,
+  isValidTabForRole,
+  getDefaultTabForRole,
+  getPortalTabUrl
+} from './navigationConfig'
+import Footer from './Footer'
+
 
 
 // ─────────────────────────────────────────────
@@ -383,17 +394,44 @@ const initialPending: PendingReview[] = [
 ]
 
 export default function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Session persistence: restore user from storage on startup if available
   const [currentUser, setCurrentUser] = useState<UserSession | null>(() => {
     return tokenStorage.getUser()
   })
+  const [isAuthRestored, setIsAuthRestored] = useState(false)
 
   // Responsive mobile menu toggle
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  // Router sub-route states
-  const [studentTab, setStudentTab] = useState<'drives' | 'my-applications' | 'eligibility'>('drives')
-  const [recruiterTab, setRecruiterTab] = useState<'pipeline' | 'post-job' | 'schedule'>('pipeline')
-  const [adminTab, setAdminTab] = useState<'overview' | 'approvals' | 'students-audit' | 'audit-logs'>('overview')
+  // Derive active portal tab strictly from search param (?tab=...)
+  const activeTabParam = searchParams.get('tab')
+  const activeRoleTab = useMemo(() => {
+    if (!currentUser) return 'drives'
+    if (isValidTabForRole(currentUser.role, activeTabParam)) {
+      return activeTabParam as string
+    }
+    return getDefaultTabForRole(currentUser.role)
+  }, [currentUser, activeTabParam])
+
+  // Automatically enforce valid role tab query parameter on /portal
+  useEffect(() => {
+    if (location.pathname === '/portal' && currentUser) {
+      if (!isValidTabForRole(currentUser.role, activeTabParam)) {
+        const defaultTab = getDefaultTabForRole(currentUser.role)
+        setSearchParams({ tab: defaultTab }, { replace: true })
+      }
+    }
+  }, [location.pathname, currentUser, activeTabParam, setSearchParams])
+
+  // Helper to change portal tab via URL search param
+  const navigateToTab = (tabId: string) => {
+    setSearchParams({ tab: tabId })
+    setMobileMenuOpen(false)
+  }
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -461,6 +499,53 @@ export default function App() {
       toastTimerRef.current = null
     }, 3500)
   }
+
+  // Startup: Validate stored session with backend and mark auth restored
+  useEffect(() => {
+    let isMounted = true
+
+    async function restoreSession() {
+      const storedToken = tokenStorage.get()
+      const storedUser = tokenStorage.getUser()
+
+      if (storedToken && storedUser) {
+        try {
+          const meRes = await apiFetch<any>('/auth/me')
+          if (isMounted) {
+            if (meRes.success && meRes.data) {
+              const refreshedUser: UserSession = {
+                id: meRes.data.id,
+                email: meRes.data.email,
+                role: meRes.data.role,
+                name: meRes.data.studentProfile?.fullName || meRes.data.recruiterProfile?.fullName || storedUser.name,
+                token: storedToken
+              }
+              setCurrentUser(refreshedUser)
+              tokenStorage.setUser(refreshedUser)
+            } else if (meRes.error && (meRes.error.includes('401') || meRes.error.includes('token') || meRes.error.includes('expired'))) {
+              // Token expired or invalid
+              tokenStorage.remove()
+              tokenStorage.removeUser()
+              setCurrentUser(null)
+              showToast('Session expired. Please sign in again.')
+            }
+          }
+        } catch (err) {
+          console.warn('Session verification fallback:', err)
+        }
+      }
+      if (isMounted) {
+        setIsAuthRestored(true)
+      }
+    }
+
+    restoreSession()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
 
   // Listen for Supabase OAuth Redirects & Session Changes
   useEffect(() => {
@@ -705,16 +790,17 @@ export default function App() {
   const handleLoginSuccess = (user: UserSession) => {
     setCurrentUser(user)
     tokenStorage.setUser(user)
-    showToast(`Welcome back, ${user.name}!`)
+    showToast(`Welcome, ${user.name}!`)
+    navigate('/landing')
   }
 
-  // Sign out handler - Full browser navigation to '/'
+  // Sign out handler - cleanly return to login page without jarring refresh
   const handleSignOut = () => {
     setCurrentUser(null)
     tokenStorage.remove()
     tokenStorage.removeUser()
     setMobileMenuOpen(false)
-    window.location.href = '/'
+    navigate('/login')
   }
 
   // Notification handlers
@@ -776,10 +862,9 @@ export default function App() {
     }
   }
 
-  // Not logged in -> Render Sign In
-
-  if (!currentUser) {
-    return <KexsioSignInCard onSuccess={handleLoginSuccess} />
+  // Handle navigation from Landing Page to specific role tab
+  const handleLandingNavigateTab = (tabId: string) => {
+    navigate(getPortalTabUrl(tabId))
   }
 
   // Quick Eligibility Check
@@ -851,12 +936,12 @@ export default function App() {
   // Recruiter Post Job
   const handlePostJob = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newJobTitle.trim()) return
+    if (!newJobTitle.trim() || !currentUser) return
 
     const newJob: JobItem = {
       id: `job-${Date.now()}`,
       title: newJobTitle.trim(),
-      company: currentUser.name.includes('(') ? currentUser.name.split('(')[1].replace(')', '') : 'Enterprise Partner',
+      company: currentUser?.name?.includes('(') ? currentUser.name.split('(')[1].replace(')', '') : 'Enterprise Partner',
       jobType: newJobType,
       location: newJobLocation.trim() || 'Bengaluru, KA',
       salary: newJobSalary.trim() || '₹18 - 24 LPA',
@@ -898,7 +983,7 @@ export default function App() {
     setNewJobSalary('')
     setNewJobDescription('')
     showToast('Job opening published and added to active drives.')
-    setRecruiterTab('pipeline')
+    navigateToTab('pipeline')
   }
 
 
@@ -919,7 +1004,7 @@ export default function App() {
 
     const matchedJob = jobs.find((j) => j.id === scheduleModalApplicant.jobId)
     const assignedJobTitle = matchedJob ? matchedJob.title : 'Software Development Engineer'
-    const assignedCompany = matchedJob ? matchedJob.company : (currentUser.name.includes('(') ? currentUser.name.split('(')[1].replace(')', '') : 'Enterprise Partner')
+    const assignedCompany = matchedJob ? matchedJob.company : (currentUser ? (currentUser.name.includes('(') ? currentUser.name.split('(')[1].replace(')', '') : 'Enterprise Partner') : 'Enterprise Partner')
 
     const newInterview: InterviewItem = {
       id: `int-${Date.now()}`,
@@ -947,7 +1032,7 @@ export default function App() {
     handleUpdateStatus(scheduleModalApplicant.id, 'INTERVIEW_SCHEDULED')
     setScheduleModalApplicant(null)
     showToast(`Interview scheduled with ${scheduleModalApplicant.studentName}!`)
-    setRecruiterTab('schedule')
+    navigateToTab('schedule')
   }
 
   // Admin Actions
@@ -1018,8 +1103,12 @@ export default function App() {
     })
   }, [jobs, searchQuery, selectedDeptFilter])
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+  // Portal Component Shell (rendered only when user is authenticated)
+  const renderPortalView = () => {
+    if (!currentUser) return null
+    return (
+      <ErrorBoundary onReset={() => navigate('/landing')}>
+        <div style={{ display: 'flex', minHeight: '100dvh', width: '100%', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', alignItems: 'stretch' }}>
       <style>{`
         * { box-sizing: border-box; }
         
@@ -1170,6 +1259,12 @@ export default function App() {
           white-space: nowrap;
           box-shadow: 1px 0 2px rgba(15, 23, 42, 0.02);
           transition: width 0.26s cubic-bezier(0.16, 1, 0.3, 1), padding 0.26s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+          /* Stick the sidebar while the page scrolls */
+          position: sticky;
+          top: 0;
+          height: 100dvh;
+          height: 100vh; /* fallback */
+          align-self: flex-start;
         }
 
         .c2c-sidebar-text {
@@ -1370,8 +1465,11 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0', marginBottom: '18px' }}>
             <div
               className="c2c-brand-chip"
-              title="Return to Home"
-              onClick={() => { window.location.href = '/' }}
+              title="Return to Landing Page"
+              onClick={() => {
+                navigate('/landing')
+                setMobileMenuOpen(false)
+              }}
             >
               <div className="c2c-logo-badge">
                 C2C
@@ -1394,202 +1492,60 @@ export default function App() {
             </button>
           </div>
 
-          {/* 1. STUDENT ROUTER LINKS */}
-          {currentUser.role === 'STUDENT' && (
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {[
-                {
-                  id: 'drives',
-                  label: `Active Drives (${jobs.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'my-applications',
-                  label: `My Applications (${appliedJobs.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                      <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'eligibility',
-                  label: 'Eligibility Calculator',
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="4" y="2" width="16" height="20" rx="2"/>
-                      <line x1="8" y1="6" x2="16" y2="6"/>
-                      <line x1="16" y1="14" x2="16" y2="14"/>
-                      <line x1="8" y1="14" x2="8" y2="14"/>
-                      <line x1="12" y1="14" x2="12" y2="14"/>
-                      <line x1="8" y1="18" x2="8" y2="18"/>
-                      <line x1="12" y1="18" x2="12" y2="18"/>
-                      <line x1="16" y1="18" x2="16" y2="18"/>
-                    </svg>
-                  )
-                }
-              ].map((tab) => {
-                const isActive = studentTab === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    title={tab.label}
-                    onClick={() => {
-                      setStudentTab(tab.id as any)
-                      setMobileMenuOpen(false)
-                    }}
-                    className={`c2c-nav-item ${isActive ? 'c2c-nav-active' : ''}`}
-                    style={{
-                      fontWeight: isActive ? '700' : '600',
-                      color: isActive ? '#FFFFFF' : '#475569'
-                    }}
-                  >
-                    <span className="c2c-nav-icon">{tab.icon}</span>
-                    <span className="c2c-sidebar-text">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-          )}
+          {/* Quick Home / Landing Link */}
+          <div style={{ marginBottom: '8px' }}>
+            <button
+              onClick={() => {
+                navigate('/landing')
+                setMobileMenuOpen(false)
+              }}
+              className="c2c-nav-item"
+              title="Return to Welcome Hub"
+              style={{
+                width: '100%',
+                fontWeight: '600',
+                color: '#2563EB',
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #DBEAFE'
+              }}
+            >
+              <span className="c2c-nav-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </span>
+              <span className="c2c-sidebar-text">← Home Hub</span>
+            </button>
+          </div>
 
-          {/* 2. RECRUITER ROUTER LINKS */}
-          {currentUser.role === 'RECRUITER' && (
+          {/* DYNAMIC ROLE-BASED SIDEBAR NAVIGATION (SHARED CONFIG) */}
+          {currentUser && (
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {[
-                {
-                  id: 'pipeline',
-                  label: `Applicant Funnel (${applicants.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'post-job',
-                  label: '+ Post New Opening',
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="16"/>
-                      <line x1="8" y1="12" x2="16" y2="12"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'schedule',
-                  label: `Interview Schedules (${interviews.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                  )
-                }
-              ].map((tab) => {
-                const isActive = recruiterTab === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    title={tab.label}
-                    onClick={() => {
-                      setRecruiterTab(tab.id as any)
-                      setMobileMenuOpen(false)
-                    }}
-                    className={`c2c-nav-item ${isActive ? 'c2c-nav-active' : ''}`}
-                    style={{
-                      fontWeight: isActive ? '700' : '600',
-                      color: isActive ? '#FFFFFF' : '#475569'
-                    }}
-                  >
-                    <span className="c2c-nav-icon">{tab.icon}</span>
-                    <span className="c2c-sidebar-text">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-          )}
+              {(ROLE_NAVIGATION_CONFIG[currentUser.role]?.tabs || []).map((tab) => {
+                const isActive = activeRoleTab === tab.id
+                let countBadge = ''
+                if (tab.id === 'drives') countBadge = ` (${jobs.length})`
+                else if (tab.id === 'my-applications') countBadge = ` (${appliedJobs.length})`
+                else if (tab.id === 'pipeline') countBadge = ` (${applicants.length})`
+                else if (tab.id === 'schedule') countBadge = ` (${interviews.length})`
+                else if (tab.id === 'approvals') countBadge = ` (${pendingList.length})`
+                else if (tab.id === 'students-audit') countBadge = ` (${studentsAudit.length})`
+                else if (tab.id === 'audit-logs') countBadge = ` (${auditLogs.length})`
 
-          {/* 3. ADMIN ROUTER LINKS */}
-          {currentUser.role === 'ADMIN' && (
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {[
-                {
-                  id: 'overview',
-                  label: 'Placement Cell Overview',
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="7" height="7"/>
-                      <rect x="14" y="3" width="7" height="7"/>
-                      <rect x="14" y="14" width="7" height="7"/>
-                      <rect x="3" y="14" width="7" height="7"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'approvals',
-                  label: `Pending Approvals (${pendingList.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                      <path d="M9 12l2 2 4-4"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'students-audit',
-                  label: `Student Academic Audit (${studentsAudit.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  )
-                },
-                {
-                  id: 'audit-logs',
-                  label: `Institutional Audit Logs (${auditLogs.length})`,
-                  icon: (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                      <polyline points="10 9 9 9 8 9"/>
-                    </svg>
-                  )
-                }
-              ].map((tab) => {
-                const isActive = adminTab === tab.id
                 return (
                   <button
                     key={tab.id}
-                    title={tab.label}
-                    onClick={() => {
-                      setAdminTab(tab.id as any)
-                      setMobileMenuOpen(false)
-                    }}
+                    title={`${tab.label}${countBadge}`}
+                    onClick={() => navigateToTab(tab.id)}
                     className={`c2c-nav-item ${isActive ? 'c2c-nav-active' : ''}`}
                     style={{
                       fontWeight: isActive ? '700' : '600',
                       color: isActive ? '#FFFFFF' : '#475569'
                     }}
                   >
-                    <span className="c2c-nav-icon">{tab.icon}</span>
-                    <span className="c2c-sidebar-text">{tab.label}</span>
+                    <span className="c2c-nav-icon">{tab.icon({ width: 18, height: 18 })}</span>
+                    <span className="c2c-sidebar-text">{tab.label}{countBadge}</span>
                   </button>
                 )
               })}
@@ -1622,9 +1578,9 @@ export default function App() {
       {/* ─────────────────────────────────────────────────────────────
           MAIN CONTENT AREA
          ───────────────────────────────────────────────────────────── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Top Navbar */}
-        <header className="c2c-main-header" style={{ height: '70px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', backgroundColor: '#FFFFFF' }}>
+        <header className="c2c-main-header" style={{ height: '70px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 32px', backgroundColor: '#FFFFFF', position: 'sticky', top: 0, zIndex: 30 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Hamburger Button on Mobile */}
             <button
@@ -1728,13 +1684,13 @@ export default function App() {
         {/* ─────────────────────────────────────────────────────────────
             BODY VIEWS
            ───────────────────────────────────────────────────────────── */}
-        <div className="c2c-main-content" style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+        <div className="c2c-main-content" style={{ flex: 1, padding: '28px 32px', display: 'flex', flexDirection: 'column' }}>
           {/* =========================================================
               A. STUDENT ROUTE CONTENT
              ========================================================= */}
           {currentUser.role === 'STUDENT' && (
             <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {studentTab === 'drives' && (
+              {activeRoleTab === 'drives' && (
                 <>
                   {/* Search and Department Filter Toolbar */}
                   <div className="light-card" style={{ padding: '14px 18px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
@@ -1852,7 +1808,7 @@ export default function App() {
                 </>
               )}
 
-              {studentTab === 'my-applications' && (
+              {activeRoleTab === 'my-applications' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
@@ -1934,7 +1890,13 @@ export default function App() {
                             dot: '#EF4444',
                             label: 'NOT SELECTED'
                           }
-                        }[appInfo.status]
+                        }[appInfo.status] || {
+                          bg: '#FEF3C7',
+                          color: '#92400E',
+                          border: '#FDE68A',
+                          dot: '#D97706',
+                          label: 'WAITING / IN REVIEW'
+                        }
 
                         return (
                           <div
@@ -2022,7 +1984,7 @@ export default function App() {
                 </div>
               )}
 
-              {studentTab === 'eligibility' && (() => {
+              {activeRoleTab === 'eligibility' && (() => {
                 const evaluatedJobs = jobs.map((job) => {
                   const evalResult = checkJobEligibility(job)
                   const cgpaDiff = (job.minCgpa - studentCgpa).toFixed(2)
@@ -2446,14 +2408,14 @@ export default function App() {
              ========================================================= */}
           {currentUser.role === 'RECRUITER' && (
             <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {recruiterTab === 'pipeline' && (
+              {activeRoleTab === 'pipeline' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, fontFamily: 'Outfit, Inter, sans-serif' }}>Candidate Screening Pipeline</h3>
                       <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>Review candidates, advance hiring rounds, or schedule interviews.</p>
                     </div>
-                    <button onClick={() => setRecruiterTab('post-job')} className="solid-btn" style={{ padding: '7px 14px', fontSize: '12px' }}>
+                    <button onClick={() => navigateToTab('post-job')} className="solid-btn" style={{ padding: '7px 14px', fontSize: '12px' }}>
                       + Post Job
                     </button>
                   </div>
@@ -2497,7 +2459,7 @@ export default function App() {
                 </div>
               )}
 
-              {recruiterTab === 'post-job' && (
+              {activeRoleTab === 'post-job' && (
                 <div className="light-card" style={{ padding: '24px', maxWidth: '640px', margin: '0 auto', width: '100%' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px 0', fontFamily: 'Outfit, Inter, sans-serif' }}>
                     Create New Campus Drive
@@ -2629,7 +2591,7 @@ export default function App() {
                 </div>
               )}
 
-              {recruiterTab === 'schedule' && (
+              {activeRoleTab === 'schedule' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
@@ -2683,7 +2645,7 @@ export default function App() {
              ========================================================= */}
           {currentUser.role === 'ADMIN' && (
             <div style={{ maxWidth: '980px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-              {adminTab === 'overview' && (
+              {activeRoleTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
                     {[
@@ -2735,7 +2697,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'approvals' && (
+              {activeRoleTab === 'approvals' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', margin: '0 0 4px 0', fontFamily: 'Outfit, Inter, sans-serif' }}>
                     Placement Cell Approval Queue
@@ -2773,7 +2735,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'students-audit' && (
+              {activeRoleTab === 'students-audit' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
@@ -2812,7 +2774,7 @@ export default function App() {
                 </div>
               )}
 
-              {adminTab === 'audit-logs' && (
+              {activeRoleTab === 'audit-logs' && (
                 <div className="light-card" style={{ padding: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
@@ -2870,6 +2832,9 @@ export default function App() {
               )}
             </div>
           )}
+
+          {/* Universal Footer for Portal View */}
+          <Footer />
         </div>
       </main>
 
@@ -2944,6 +2909,103 @@ export default function App() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+      </ErrorBoundary>
+    )
+  }
+
+  // Loading state while restoring session from storage
+  if (!isAuthRestored && tokenStorage.get()) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, sans-serif' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid #E2E8F0', borderTopColor: '#0F172A', animation: 'spin 0.8s linear infinite' }} />
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#64748B' }}>Restoring verified session...</div>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
+
+  return (
+    <Routes>
+      {/* 1. Login Route */}
+      <Route
+        path="/login"
+        element={
+          currentUser ? (
+            <Navigate to="/landing" replace />
+          ) : (
+            <KexsioSignInCard onSuccess={handleLoginSuccess} />
+          )
+        }
+      />
+
+      {/* 2. Protected Post-Login Landing Page */}
+      <Route
+        path="/landing"
+        element={
+          !currentUser ? (
+            <Navigate to="/login" replace />
+          ) : (
+            <ErrorBoundary onReset={() => navigate('/landing')}>
+              <PostLoginLandingPage
+                user={currentUser}
+                onNavigateTab={handleLandingNavigateTab}
+                onSignOut={handleSignOut}
+                jobsCount={jobs.length}
+                applicationsCount={currentUser.role === 'STUDENT' ? appliedJobs.length : applicants.length}
+                interviewsCount={interviews.length}
+                pendingCount={pendingList.length}
+                studentsAuditCount={studentsAudit.length}
+                auditLogsCount={auditLogs.length}
+                liveJobs={jobs}
+              />
+            </ErrorBoundary>
+          )
+        }
+      />
+
+      {/* 3. Protected Portal View */}
+      <Route
+        path="/portal"
+        element={
+          !currentUser ? (
+            <Navigate to="/login" replace />
+          ) : (
+            renderPortalView()
+          )
+        }
+      />
+
+      {/* 4. Root Path: Redirect based on auth */}
+      <Route
+        path="/"
+        element={
+          <Navigate to={currentUser ? "/landing" : "/login"} replace />
+        }
+      />
+
+      {/* 5. 404 Catch-All Route */}
+      <Route
+        path="*"
+        element={
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, sans-serif', padding: '24px', textAlign: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#0F172A', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '18px', marginBottom: '16px' }}>
+              C2C
+            </div>
+            <h1 style={{ fontSize: '24px', fontWeight: '800', margin: '0 0 8px 0', fontFamily: 'Outfit, Inter, sans-serif' }}>Page Not Found</h1>
+            <p style={{ color: '#64748B', fontSize: '14px', maxWidth: '400px', margin: '0 0 24px 0' }}>The destination you requested does not exist or has been relocated.</p>
+            <button
+              onClick={() => navigate(currentUser ? '/landing' : '/login')}
+              className="solid-btn"
+              style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '700' }}
+            >
+              {currentUser ? '← Back to Home Hub' : '← Back to Sign In'}
+            </button>
+          </div>
+        }
+      />
+    </Routes>
   )
 }

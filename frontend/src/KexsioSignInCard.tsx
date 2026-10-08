@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { apiFetch, tokenStorage, UserSession } from './api'
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import loginSchoolImg from '../imgs/login_school.jpg'
 
 export type UserRole = 'STUDENT' | 'RECRUITER' | 'ADMIN'
 
@@ -124,23 +125,125 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
           min-height: 100svh;
           width: 100%;
           min-width: 320px;
-          display: grid;
-          place-items: center;
-          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          overflow-x: hidden;
           position: relative;
           isolation: isolate;
-          padding: 24px 18px;
+          padding: 0;
           color: #0F172A;
           font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           box-sizing: border-box;
           background: #FFFFFF;
         }
 
+        @media (min-width: 1024px) {
+          .kx-page {
+            flex-direction: row;
+            height: 100svh;
+            overflow: hidden;
+          }
+        }
+
         .kx-page *, .kx-page *::before, .kx-page *::after {
           box-sizing: border-box;
         }
 
-        /* Ambient Animated Grid & Lights */
+        /* Left Image Panel */
+        .kx-image-panel {
+          display: none;
+          position: relative;
+          overflow: hidden;
+          background: #0F172A;
+        }
+
+        @media (min-width: 1024px) {
+          .kx-image-panel {
+            display: flex;
+            flex: 1 1 50%;
+            max-width: 50%;
+            height: 100%;
+            position: relative;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 48px;
+          }
+        }
+
+        .kx-image-panel-img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          transition: transform 0.6s ease;
+        }
+
+        .kx-image-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            180deg,
+            rgba(15, 23, 42, 0.25) 0%,
+            rgba(15, 23, 42, 0.45) 50%,
+            rgba(15, 23, 42, 0.88) 100%
+          );
+          z-index: 2;
+        }
+
+        .kx-image-content {
+          position: relative;
+          z-index: 3;
+          color: #FFFFFF;
+          max-width: 520px;
+        }
+
+        /* Mobile / Tablet Top Banner */
+        .kx-image-banner {
+          display: block;
+          position: relative;
+          width: 100%;
+          height: 180px;
+          overflow: hidden;
+          background: #0F172A;
+        }
+
+        @media (min-width: 640px) {
+          .kx-image-banner {
+            height: 220px;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .kx-image-banner {
+            display: none;
+          }
+        }
+
+        /* Right Form Panel */
+        .kx-form-panel {
+          flex: 1 1 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 32px 20px;
+          min-height: 100svh;
+          overflow-y: auto;
+        }
+
+        @media (min-width: 1024px) {
+          .kx-form-panel {
+            flex: 1 1 50%;
+            max-width: 50%;
+            min-height: 100%;
+            height: 100%;
+            padding: 40px 32px;
+          }
+        }
+
+        /* Ambient Animated Grid & Lights inside form panel */
         .kx-grid-overlay {
           position: absolute;
           inset: 0;
@@ -157,11 +260,11 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-halo-top {
           position: absolute;
-          top: -30vh;
+          top: -25vh;
           left: 50%;
           transform: translateX(-50%);
-          width: min(1000px, 120vw);
-          height: 60vh;
+          width: min(800px, 120vw);
+          height: 50vh;
           background: rgba(148, 163, 184, 0.2);
           filter: blur(80px);
           border-radius: 9999px;
@@ -171,8 +274,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-orb-left {
           position: absolute;
-          width: 340px;
-          height: 340px;
+          width: 280px;
+          height: 280px;
           top: 15%;
           left: 5%;
           background: rgba(203, 213, 225, 0.45);
@@ -184,8 +287,8 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
 
         .kx-orb-right {
           position: absolute;
-          width: 340px;
-          height: 340px;
+          width: 280px;
+          height: 280px;
           right: 5%;
           bottom: 12%;
           background: rgba(226, 232, 240, 0.5);
@@ -637,23 +740,75 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         }
       `}</style>
 
-      {/* Ambient background animations */}
-      <div className="kx-grid-overlay" aria-hidden="true" />
-      <div className="kx-halo-top" aria-hidden="true" />
-      <div className="kx-orb-left" aria-hidden="true" />
-      <div className="kx-orb-right" aria-hidden="true" />
+      {/* Left Full-Height Image Panel (Desktop >= 1024px) */}
+      <div className="kx-image-panel" aria-label="Campus recruitment and university life">
+        <img
+          src={loginSchoolImg}
+          alt="Campus To Career - University placement and career gateway"
+          className="kx-image-panel-img"
+        />
+        <div className="kx-image-overlay" aria-hidden="true" />
+        <div className="kx-image-content">
+          <h1
+            style={{
+              fontSize: '32px',
+              fontWeight: '800',
+              lineHeight: 1.25,
+              margin: 0,
+              fontFamily: 'Outfit, Inter, sans-serif',
+              color: '#FFFFFF',
+              letterSpacing: '-0.02em',
+              textShadow: '0 2px 12px rgba(15, 23, 42, 0.75)'
+            }}
+          >
+            C2C - Campus To Career
+          </h1>
+        </div>
+      </div>
 
-      {/* Interactive 3D Card Stage */}
-      <div className="kx-stage">
-        <div
-          ref={cardRef}
-          className="kx-card-shell"
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
-          style={{
-            transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`
-          }}
-        >
+      {/* Top Image Banner for Tablet / Mobile (< 1024px) */}
+      <div className="kx-image-banner" aria-label="Campus recruitment banner">
+        <img
+          src={loginSchoolImg}
+          alt="Campus To Career banner"
+          className="kx-image-panel-img"
+        />
+        <div className="kx-image-overlay" aria-hidden="true" />
+        <div style={{ position: 'absolute', inset: 0, zIndex: 3, display: 'flex', alignItems: 'flex-end', padding: '16px 20px', color: '#FFFFFF' }}>
+          <div
+            style={{
+              fontSize: '18px',
+              fontWeight: '800',
+              fontFamily: 'Outfit, Inter, sans-serif',
+              color: '#FFFFFF',
+              letterSpacing: '-0.02em',
+              textShadow: '0 2px 8px rgba(15, 23, 42, 0.8)'
+            }}
+          >
+            C2C - Campus To Career
+          </div>
+        </div>
+      </div>
+
+      {/* Right Login Panel */}
+      <div className="kx-form-panel">
+        {/* Ambient background animations */}
+        <div className="kx-grid-overlay" aria-hidden="true" />
+        <div className="kx-halo-top" aria-hidden="true" />
+        <div className="kx-orb-left" aria-hidden="true" />
+        <div className="kx-orb-right" aria-hidden="true" />
+
+        {/* Interactive 3D Card Stage */}
+        <div className="kx-stage">
+          <div
+            ref={cardRef}
+            className="kx-card-shell"
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handlePointerLeave}
+            style={{
+              transform: `rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`
+            }}
+          >
           <div className="kx-shell-shadow" aria-hidden="true" />
 
           {/* 4 Animated Edge Runners */}
@@ -673,11 +828,10 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
             />
 
             <div className="kx-card-content">
-              {/* Brand Logo & Header: Plain HTML Anchor to Landing Page ('/') */}
-              <a
-                href="/"
-                style={{ textDecoration: 'none', color: 'inherit', display: 'block', cursor: 'pointer' }}
-                title="Return to Landing Page"
+              {/* Brand Logo & Header */}
+              <div
+                style={{ textDecoration: 'none', color: 'inherit', display: 'block', cursor: 'default' }}
+                title="Campus To Career"
               >
                 <div className="kx-logo-wrap">
                   <span className="kx-logo-letter">C2C</span>
@@ -687,7 +841,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                   <h1 className="kx-title">Campus to Career</h1>
                   <p className="kx-subtitle">Placement &amp; Internship Governance Portal</p>
                 </div>
-              </a>
+              </div>
 
               {/* Role Selection Tabs */}
               <div className="kx-role-selector">
@@ -861,6 +1015,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
