@@ -27,7 +27,7 @@ async function main() {
   await prisma.user.deleteMany()
   await prisma.department.deleteMany()
 
-  const passwordHash = await bcrypt.hash('Password123!', 10)
+  const passwordHash = await bcrypt.hash('12345678', 10)
 
   // 1. Departments
   console.log('Inserting departments...')
@@ -49,15 +49,111 @@ async function main() {
   const skillPython = await prisma.skill.create({ data: { name: 'Python', category: 'Programming' } })
   const skillSQL = await prisma.skill.create({ data: { name: 'PostgreSQL', category: 'Database' } })
 
-  // 3. Admin User
-  console.log('Creating admin user...')
+  // 3. Generic Accounts: useradmin, userstudent, userrecruiter with password 12345678
+  console.log('Creating generic accounts (useradmin, userstudent, userrecruiter)...')
   await prisma.user.create({
     data: {
-      email: 'admin@campus.edu',
+      email: 'useradmin',
       passwordHash,
       role: Role.ADMIN
     }
   })
+
+  await prisma.user.create({
+    data: {
+      email: 'userstudent',
+      passwordHash,
+      role: Role.STUDENT,
+      studentProfile: {
+        create: {
+          studentId: 'GEN-STU-001',
+          fullName: 'Campus Student',
+          phone: '+919999988888',
+          departmentId: deptCSE.id,
+          branch: 'CSE',
+          cgpa: 8.5,
+          graduationYear: 2026,
+          semester: 7,
+          activeBacklogs: 0,
+          totalBacklogs: 0,
+          tenthPercent: 91.0,
+          twelfthPercent: 89.0,
+          preferredJobType: JobType.FULL_TIME,
+          preferredLocation: 'Bengaluru',
+          profileComplete: true,
+          completionPct: 100,
+          skills: {
+            create: [
+              { skillId: skillTS.id, level: 'Advanced' },
+              { skillId: skillNode.id, level: 'Advanced' },
+              { skillId: skillReact.id, level: 'Advanced' }
+            ]
+          }
+        }
+      }
+    }
+  })
+
+
+  const genericRecruiterUser = await prisma.user.create({
+    data: {
+      email: 'userrecruiter',
+      passwordHash,
+      role: Role.RECRUITER,
+      recruiterProfile: {
+        create: {
+          fullName: 'Campus Recruiter',
+          phone: '+919999977777',
+          designation: 'Lead University Recruiter'
+        }
+      }
+    },
+    include: { recruiterProfile: true }
+  })
+
+  const genericCompany = await prisma.company.create({
+    data: {
+      recruiterId: genericRecruiterUser.recruiterProfile!.id,
+      name: 'Google India Careers',
+      website: 'https://careers.google.com',
+      industry: 'Technology & Cloud',
+      description: 'Global leader in cloud computing, internet services, and generative AI research.',
+      headquarters: 'Bengaluru / Hyderabad',
+      status: CompanyStatus.APPROVED
+    }
+  })
+
+  // Job for userrecruiter
+  const genericJob = await prisma.jobPosting.create({
+    data: {
+      companyId: genericCompany.id,
+      title: 'Cloud Systems & Backend Engineer',
+      description: 'Design distributed architectures, Kubernetes workflows, and high-performance microservices.',
+      responsibilities: 'Build low-latency APIs, lead infrastructure design, and coordinate with site reliability engineers.',
+      jobType: JobType.FULL_TIME,
+      workMode: WorkMode.HYBRID,
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      country: 'India',
+      salaryMin: 2000000,
+      salaryMax: 2600000,
+      openings: 8,
+      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      status: JobStatus.PUBLISHED,
+      publishedAt: new Date(),
+      eligibility: {
+        create: {
+          minCgpa: 8.0,
+          maxBacklogs: 0,
+          allowedDepts: ['CSE', 'ECE'],
+          allowedGradYears: [2025, 2026],
+          requiredSkills: ['TypeScript', 'Node.js']
+        }
+      }
+    }
+  })
+
+
 
   // 4. Students
   console.log('Creating students...')

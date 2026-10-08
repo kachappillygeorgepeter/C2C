@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { apiFetch, tokenStorage, UserSession } from './api'
+import { supabase, isSupabaseConfigured } from './supabaseClient'
 
 export type UserRole = 'STUDENT' | 'RECRUITER' | 'ADMIN'
 
@@ -9,8 +10,8 @@ export interface KexsioSignInCardProps {
 
 export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
   const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT')
-  const [email, setEmail] = useState('student@campus.edu')
-  const [password, setPassword] = useState('student@2026')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,36 +42,11 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
     setGlowPos({ x: 50, y: 42 })
   }
 
-  // Auto-fill demo credentials on role change
+  // Clear errors when role switches
   useEffect(() => {
     setErrorMessage(null)
-    if (selectedRole === 'STUDENT') {
-      setEmail('student@campus.edu')
-      setPassword('student@2026')
-    } else if (selectedRole === 'RECRUITER') {
-      setEmail('recruiter@microsoft.com')
-      setPassword('recruiter@corp')
-    } else if (selectedRole === 'ADMIN') {
-      setEmail('admin@c2c.edu')
-      setPassword('admin@secure')
-    }
   }, [selectedRole])
 
-  // Quick Demo Autofill Handler
-  const handleQuickDemoFill = (role: UserRole) => {
-    setSelectedRole(role)
-    setErrorMessage(null)
-    if (role === 'STUDENT') {
-      setEmail('student@campus.edu')
-      setPassword('student@2026')
-    } else if (role === 'RECRUITER') {
-      setEmail('recruiter@microsoft.com')
-      setPassword('recruiter@corp')
-    } else if (role === 'ADMIN') {
-      setEmail('admin@c2c.edu')
-      setPassword('admin@secure')
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,14 +54,14 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
     setIsLoading(true)
     setErrorMessage(null)
 
-    // Attempt backend authentication
+    // Attempt backend authentication with Supabase/Prisma verified accounts
     const res = await apiFetch<{
       accessToken: string
       refreshToken: string
       user: { id: string; email: string; role: UserRole; studentProfile?: { fullName: string }; recruiterProfile?: { fullName: string } }
     }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email: username.trim(), password })
     })
 
     setIsLoading(false)
@@ -95,7 +71,7 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
         id: res.data.user.id,
         email: res.data.user.email,
         role: res.data.user.role,
-        name: res.data.user.studentProfile?.fullName || res.data.user.recruiterProfile?.fullName || email.split('@')[0],
+        name: res.data.user.studentProfile?.fullName || res.data.user.recruiterProfile?.fullName || username.trim(),
         token: res.data.accessToken
       }
       if (rememberMe) {
@@ -104,26 +80,41 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
       }
       if (onSuccess) onSuccess(userSession)
     } else {
-      // Graceful fallback to verified demo mode if backend is not yet populated
-      const fallbackName =
-        selectedRole === 'STUDENT'
-          ? 'Alex Mercer'
-          : selectedRole === 'RECRUITER'
-          ? 'Ananya Roy (Microsoft HR)'
-          : 'Dr. R. Kumar (Head TPO)'
-
-      const userSession: UserSession = {
-        id: `usr-${Date.now()}`,
-        email,
-        role: selectedRole,
-        name: fallbackName
-      }
-      if (rememberMe) {
-        tokenStorage.setUser(userSession)
-      }
-      if (onSuccess) onSuccess(userSession)
+      setErrorMessage(res.error || 'Invalid username or password. Please try again.')
     }
   }
+
+
+  // Google OAuth via Supabase
+  const handleGoogleSignIn = async () => {
+    if (!isSupabaseConfigured) {
+      alert(
+        'Supabase is not configured yet! Please provide your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in frontend/.env to enable Google OAuth.'
+      )
+      return
+    }
+
+    try {
+      setIsLoading(true)
+      localStorage.setItem('c2c_oauth_role', selectedRole)
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      })
+
+      if (error) {
+        setErrorMessage(error.message)
+        setIsLoading(false)
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Google Sign-In failed.')
+      setIsLoading(false)
+    }
+  }
+
 
   return (
     <div className="kx-page">
@@ -698,23 +689,6 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                 </div>
               </a>
 
-              {/* Quick Demo Autofill Bar */}
-              <div className="kx-demo-bar">
-                <span className="kx-demo-label">Demo Autofill:</span>
-                <div className="kx-demo-btns">
-                  {(['STUDENT', 'RECRUITER', 'ADMIN'] as UserRole[]).map((r) => (
-                    <button
-                      key={r}
-                      type="button"
-                      onClick={() => handleQuickDemoFill(r)}
-                      className={`kx-demo-chip ${selectedRole === r ? 'active' : ''}`}
-                    >
-                      {r === 'STUDENT' ? 'Student' : r === 'RECRUITER' ? 'Recruiter' : 'Admin'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Role Selection Tabs */}
               <div className="kx-role-selector">
                 {(['STUDENT', 'RECRUITER', 'ADMIN'] as UserRole[]).map((r) => (
@@ -741,20 +715,27 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                 <div className="kx-input-group">
                   <span className="kx-input-icon">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="4" width="20" height="16" rx="2" />
-                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
                     </svg>
                   </span>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    aria-label="Email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    aria-label="Username or Email"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="kx-input"
-                    placeholder="Enter registered email"
+                    placeholder={
+                      selectedRole === 'STUDENT'
+                        ? 'Username (e.g. userstudent)'
+                        : selectedRole === 'RECRUITER'
+                        ? 'Username (e.g. userrecruiter)'
+                        : 'Username (e.g. useradmin)'
+                    }
                   />
                 </div>
+
 
                 <div className="kx-input-group">
                   <span className="kx-input-icon">
@@ -829,22 +810,53 @@ export function KexsioSignInCard({ onSuccess }: KexsioSignInCardProps) {
                     </>
                   )}
                 </button>
+
+                {/* OAuth Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', margin: '14px 0 10px 0', gap: '10px' }}>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>or</span>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+                </div>
+
+                {/* Google Sign-in Button */}
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isLoading}
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    borderRadius: '8px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    color: '#0F172A',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.borderColor = '#94A3B8' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#FFFFFF'; e.currentTarget.style.borderColor = '#CBD5E1' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.98 0 12c0 2.02.45 3.84 1.25 5.42l4.03-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
               </form>
 
-              <div style={{ textAlign: 'center', marginTop: '14px' }}>
-                <a
-                  href="/"
-                  className="kx-back-home"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                  <span>Back to Home</span>
-                </a>
-              </div>
 
-              <div className="kx-footer-info">
+              <div className="kx-footer-info" style={{ marginTop: '16px' }}>
                 <span>C2C Placement System &bull; Enterprise RBAC Enabled</span>
+
               </div>
             </div>
           </div>

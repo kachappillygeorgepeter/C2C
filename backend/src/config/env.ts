@@ -14,7 +14,10 @@ const envSchema = z.object({
   REFRESH_TOKEN_EXPIRES_IN: z.string().default('30d'),
   BCRYPT_SALT_ROUNDS: z.string().default('10').transform(Number),
   RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform(Number),
-  RATE_LIMIT_MAX: z.string().default('200').transform(Number)
+  RATE_LIMIT_MAX: z.string().default('200').transform(Number),
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional()
 })
 
 export const env = envSchema.parse(process.env)
+

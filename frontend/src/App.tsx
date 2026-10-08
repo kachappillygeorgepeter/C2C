@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import KexsioSignInCard, { UserRole } from './KexsioSignInCard'
 import { apiFetch, tokenStorage, UserSession, uploadResume } from './api'
+import { supabase, isSupabaseConfigured } from './supabaseClient'
+
 
 // ─────────────────────────────────────────────
 // DATA TYPES
@@ -29,8 +31,9 @@ interface ApplicationItem {
   studentCgpa: number
   studentBacklogs: number
   appliedAt: string
-  status: 'APPLIED' | 'SHORTLISTED' | 'INTERVIEW_SCHEDULED' | 'OFFERED' | 'REJECTED'
+  status: 'APPLIED' | 'UNDER_REVIEW' | 'SHORTLISTED' | 'INTERVIEW_SCHEDULED' | 'SELECTED' | 'REJECTED'
 }
+
 
 interface InterviewItem {
   id: string
@@ -41,6 +44,59 @@ interface InterviewItem {
   date: string
   mode: 'ONLINE' | 'IN_PERSON' | 'PHONE'
   linkOrLocation: string
+}
+
+// Helper to format raw numbers or strings into clean, readable "X LPA" (e.g. 2400000 -> "24 LPA", 24 -> "24 LPA")
+export const formatLPA = (val?: number | string | null): string => {
+  if (val === null || val === undefined || val === '') return ''
+  if (typeof val === 'number') {
+    if (val >= 100000) {
+      const inLakhs = val / 100000
+      const formatted = Number.isInteger(inLakhs) ? inLakhs.toString() : inLakhs.toFixed(1)
+      return `${formatted} LPA`
+    }
+    return `${val} LPA`
+  }
+  const str = String(val).trim()
+  const num = parseFloat(str)
+  if (!isNaN(num) && /^\d+(\.\d+)?$/.test(str)) {
+    return formatLPA(num)
+  }
+  return str
+}
+
+export const formatSalaryDisplay = (job: { salaryMin?: number | null; salaryMax?: number | null; stipend?: number | null; ppoCTC?: number | null }): string => {
+  const min = job.salaryMin
+  const max = job.salaryMax
+  const stipend = job.stipend
+  const ppo = job.ppoCTC
+
+  if (stipend && ppo) {
+    const stipendStr = stipend >= 1000 ? `₹${(stipend / 1000).toFixed(0)}k/mo` : `₹${stipend}/mo`
+    const ppoStr = formatLPA(ppo)
+    return `${stipendStr} + ${ppoStr} PPO`
+  }
+  if (stipend && !ppo) {
+    const stipendStr = stipend >= 1000 ? `₹${(stipend / 1000).toFixed(0)}k/mo` : `₹${stipend}/mo`
+    return `${stipendStr} Internship`
+  }
+  if (min != null && max != null) {
+    const minL = min >= 100000 ? min / 100000 : min
+    const maxL = max >= 100000 ? max / 100000 : max
+    const minStr = Number.isInteger(minL) ? minL.toString() : minL.toFixed(1)
+    const maxStr = Number.isInteger(maxL) ? maxL.toString() : maxL.toFixed(1)
+    return `₹${minStr} - ${maxStr} LPA`
+  }
+  if (min != null) {
+    return `₹${formatLPA(min)}`
+  }
+  if (max != null) {
+    return `₹${formatLPA(max)}`
+  }
+  if (ppo != null) {
+    return `₹${formatLPA(ppo)} PPO`
+  }
+  return '₹18 - 24 LPA'
 }
 
 interface StudentAuditItem {
@@ -88,15 +144,17 @@ interface AdminDashboardMetrics {
 interface AuditLogItem {
   id: string
   action: string
-  entityType: string
+  entity?: string
+  entityType?: string
   entityId: string
   createdAt: string
   user?: {
-    name: string
-    email: string
-    role: string
+    name?: string
+    email?: string
+    role?: string
   }
 }
+
 
 const initialJobs: JobItem[] = [
   {
@@ -352,13 +410,9 @@ export default function App() {
   const resumeInputRef = useRef<HTMLInputElement | null>(null)
   const [eligibilityTabFilter, setEligibilityTabFilter] = useState<'ALL' | 'ELIGIBLE' | 'GAP_ANALYSIS'>('ALL')
 
-  const [appliedJobs, setAppliedJobs] = useState<string[]>(['job-1', 'job-2', 'job-6', 'job-7'])
-  const [applicationStatusMap, setApplicationStatusMap] = useState<Record<string, { status: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED', stage: string, appliedDate: string }>>({
-    'job-1': { status: 'SHORTLISTED', stage: 'Technical Round 1 Scheduled', appliedDate: '24 Sep 2026' },
-    'job-2': { status: 'WAITING', stage: 'Resume Under Review', appliedDate: '28 Sep 2026' },
-    'job-6': { status: 'ACCEPTED', stage: 'Offer Letter Released • ₹18 - 24 LPA', appliedDate: '18 Sep 2026' },
-    'job-7': { status: 'REJECTED', stage: 'Criteria Mismatch (CGPA / Profile)', appliedDate: '21 Sep 2026' }
-  })
+  const [appliedJobs, setAppliedJobs] = useState<string[]>([])
+  const [applicationStatusMap, setApplicationStatusMap] = useState<Record<string, { status: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED', stage: string, appliedDate: string }>>({})
+
 
   // Recruiter State
   const [applicants, setApplicants] = useState<ApplicationItem[]>(initialApplicants)
@@ -408,9 +462,46 @@ export default function App() {
     }, 3500)
   }
 
+  // Listen for Supabase OAuth Redirects & Session Changes
+  useEffect(() => {
+    if (!isSupabaseConfigured) return
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
+        const token = session.access_token
+        tokenStorage.set(token)
+
+        const pendingRole = (localStorage.getItem('c2c_oauth_role') || 'STUDENT') as UserRole
+        const fullName =
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split('@')[0] ||
+          'Google User'
+
+        const userSession: UserSession = {
+          id: session.user.id,
+          email: session.user.email || '',
+          role: (session.user.user_metadata?.role as UserRole) || pendingRole,
+          name: fullName,
+          token
+        }
+
+        tokenStorage.setUser(userSession)
+        setCurrentUser(userSession)
+        localStorage.removeItem('c2c_oauth_role')
+        showToast(`Signed in with Google as ${fullName}!`)
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
   // Attempt to fetch real jobs & applications from backend on initial mount
   useEffect(() => {
     let isMounted = true
+
     async function fetchBackendData() {
       if (!currentUser) return
 
@@ -443,7 +534,7 @@ export default function App() {
             company: j.company?.name || 'Recruiter Company',
             jobType: j.jobType || 'FULL_TIME',
             location: j.city ? `${j.city}, ${j.country || 'India'}` : 'Bengaluru, KA',
-            salary: j.salaryMin && j.salaryMax ? `₹${j.salaryMin} - ${j.salaryMax} LPA` : (j.salaryMin ? `₹${j.salaryMin} LPA` : '₹18 - 24 LPA'),
+            salary: formatSalaryDisplay(j),
             deadline: j.deadline ? new Date(j.deadline).toISOString().split('T')[0] : '2026-11-15',
             openings: j.openings || 5,
             minCgpa: j.eligibility?.minCgpa ?? 7.0,
@@ -508,7 +599,7 @@ export default function App() {
             company: j.company?.name || (currentUser.name.includes('(') ? currentUser.name.split('(')[1].replace(')', '') : 'Enterprise Partner'),
             jobType: j.jobType || 'FULL_TIME',
             location: j.city ? `${j.city}, ${j.country || 'India'}` : 'Bengaluru, KA',
-            salary: j.salaryMin && j.salaryMax ? `₹${j.salaryMin} - ${j.salaryMax} LPA` : (j.salaryMin ? `₹${j.salaryMin} LPA` : '₹18 - 24 LPA'),
+            salary: formatSalaryDisplay(j),
             deadline: j.deadline ? new Date(j.deadline).toISOString().split('T')[0] : '2026-11-30',
             openings: j.openings || 5,
             minCgpa: j.eligibility?.minCgpa ?? 7.0,
@@ -586,15 +677,16 @@ export default function App() {
         if (isMounted && studentsRes.success && studentsRes.data && studentsRes.data.length > 0) {
           const mappedAudit: StudentAuditItem[] = studentsRes.data.map((s: any) => ({
             id: s.id,
-            name: s.user?.name || 'Student',
-            usn: s.usn || 'N/A',
-            dept: s.department?.code || 'CSE',
+            name: s.fullName || s.user?.email || 'Student',
+            usn: s.studentId || 'N/A',
+            dept: s.branch || s.department?.code || 'CSE',
             cgpa: s.cgpa || 0,
             backlogs: s.activeBacklogs || 0,
-            isVerified: s.cgpa != null
+            isVerified: s.profileComplete || s.cgpa != null
           }))
           setStudentsAudit(mappedAudit)
         }
+
 
         // Fetch audit logs
         const logsRes = await apiFetch<AuditLogItem[]>('/admin/audit-logs')
@@ -718,11 +810,14 @@ export default function App() {
       body: JSON.stringify({ coverLetter: 'Interested in this opening' })
     })
 
-    if (res.success && res.data?.id) {
-      setApplicationIdMap(prev => ({ ...prev, [jobId]: res.data.id }))
+    if (!res.success) {
+      showToast(res.error || 'Failed to submit application. Eligibility criteria not met.')
+      return
     }
 
-    // Anything new should be WAITING
+    const newAppId = res.data?.id || jobId
+    setApplicationIdMap(prev => ({ ...prev, [jobId]: newAppId }))
+
     setApplicationStatusMap(prev => ({
       ...prev,
       [jobId]: {
@@ -732,10 +827,11 @@ export default function App() {
       }
     }))
 
-    setAppliedJobs([...appliedJobs, jobId])
+    setAppliedJobs(prev => [...prev, jobId])
     setJobs(jobs.map((j) => (j.id === jobId ? { ...j, applicantsCount: j.applicantsCount + 1 } : j)))
-    showToast('Application successfully submitted! Status: WAITING')
+    showToast('Application successfully submitted to recruiter!')
   }
+
 
   // Student Withdraw Application
   const handleWithdrawApplication = async (jobId: string) => {
@@ -773,8 +869,8 @@ export default function App() {
       applicantsCount: 0
     }
 
-    // Call backend API if connected
-    await apiFetch('/recruiters/jobs', {
+    // Call backend API to persist job
+    const res = await apiFetch<any>('/recruiters/jobs', {
       method: 'POST',
       body: JSON.stringify({
         title: newJob.title,
@@ -792,13 +888,19 @@ export default function App() {
       })
     })
 
-    setJobs([newJob, ...jobs])
+    const finalJob: JobItem = {
+      ...newJob,
+      id: res.success && res.data?.id ? res.data.id : newJob.id
+    }
+
+    setJobs([finalJob, ...jobs])
     setNewJobTitle('')
     setNewJobSalary('')
     setNewJobDescription('')
     showToast('Job opening published and added to active drives.')
     setRecruiterTab('pipeline')
   }
+
 
   // Recruiter Update Candidate Status
   const handleUpdateStatus = async (appId: string, newStatus: ApplicationItem['status']) => {
@@ -2376,9 +2478,10 @@ export default function App() {
                             <option value="APPLIED">APPLIED</option>
                             <option value="SHORTLISTED">SHORTLISTED</option>
                             <option value="INTERVIEW_SCHEDULED">INTERVIEW SCHEDULED</option>
-                            <option value="OFFERED">OFFERED</option>
+                            <option value="SELECTED">OFFERED & SELECTED</option>
                             <option value="REJECTED">REJECTED</option>
                           </select>
+
 
                           <button
                             onClick={() => setScheduleModalApplicant(cand)}
@@ -2604,8 +2707,8 @@ export default function App() {
                       },
                       {
                         label: 'AVERAGE CTC',
-                        val: adminMetrics?.avgSalary != null ? `₹${adminMetrics.avgSalary} LPA` : '12.8 LPA',
-                        tag: adminMetrics?.highestSalary != null ? `Highest: ₹${adminMetrics.highestSalary} LPA` : 'Campus Benchmark',
+                        val: adminMetrics?.avgSalary != null ? `₹${formatLPA(adminMetrics.avgSalary)}` : '₹12.8 LPA',
+                        tag: adminMetrics?.highestSalary != null ? `Highest: ₹${formatLPA(adminMetrics.highestSalary)}` : 'Campus Benchmark',
                         color: '#0F172A'
                       }
                     ].map((s, i) => (
@@ -2748,16 +2851,17 @@ export default function App() {
                               <span style={{ fontSize: '10px', fontWeight: '800', backgroundColor: '#0F172A', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px' }}>
                                 {log.action}
                               </span>
-                              <strong style={{ color: '#0F172A' }}>{log.entityType}</strong>
+                              <strong style={{ color: '#0F172A' }}>{log.entity || log.entityType || 'Record'}</strong>
                               <span style={{ color: '#64748B', fontSize: '11px' }}>ID: {log.entityId}</span>
                             </div>
                             <div style={{ color: '#64748B', marginTop: '3px', fontSize: '11px' }}>
-                              Triggered by: <strong style={{ color: '#334155' }}>{log.user?.name || 'System Operator'}</strong> ({log.user?.role || 'SYSTEM'})
+                              Triggered by: <strong style={{ color: '#334155' }}>{log.user?.email || log.user?.name || 'Administrator'}</strong> ({log.user?.role || 'SYSTEM'})
                             </div>
                           </div>
                           <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600' }}>
                             {log.createdAt ? new Date(log.createdAt).toLocaleString() : 'Recent'}
                           </div>
+
                         </div>
                       ))}
                     </div>
