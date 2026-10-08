@@ -82,3 +82,52 @@ export async function apiFetch<T>(
     }
   }
 }
+
+// Dedicated multipart/form-data upload helper for student resume
+export async function uploadResume(file: File): Promise<{
+  success: boolean
+  data?: {
+    resumeUrl: string
+    fileName: string
+    size: number
+    mimetype: string
+    profile: any
+  }
+  error?: string
+}> {
+  const token = tokenStorage.get()
+  const formData = new FormData()
+  formData.append('resume', file)
+
+  const headers: Record<string, string> = {}
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/students/resume/upload`, {
+      method: 'POST',
+      headers,
+      body: formData
+    })
+
+    const json = await res.json().catch(() => null)
+    if (!res.ok) {
+      return {
+        success: false,
+        error: json?.error?.message || json?.message || `HTTP ${res.status}: Upload failed`
+      }
+    }
+
+    return {
+      success: true,
+      data: json?.data
+    }
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'Failed to upload resume file'
+    }
+  }
+}
+

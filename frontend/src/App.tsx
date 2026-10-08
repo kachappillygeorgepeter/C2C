@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import KexsioSignInCard, { UserRole } from './KexsioSignInCard'
-import { apiFetch, tokenStorage, UserSession } from './api'
+import { apiFetch, tokenStorage, UserSession, uploadResume } from './api'
 
 // ─────────────────────────────────────────────
 // DATA TYPES
@@ -347,7 +347,11 @@ export default function App() {
   const [studentDept, setStudentDept] = useState<string>('CSE')
   const [studentTenthPercent, setStudentTenthPercent] = useState<number>(88)
   const [studentTwelfthPercent, setStudentTwelfthPercent] = useState<number>(85)
+  const [studentResumeUrl, setStudentResumeUrl] = useState<string | null>(null)
+  const [isUploadingResume, setIsUploadingResume] = useState(false)
+  const resumeInputRef = useRef<HTMLInputElement | null>(null)
   const [eligibilityTabFilter, setEligibilityTabFilter] = useState<'ALL' | 'ELIGIBLE' | 'GAP_ANALYSIS'>('ALL')
+
   const [appliedJobs, setAppliedJobs] = useState<string[]>(['job-1', 'job-2', 'job-6', 'job-7'])
   const [applicationStatusMap, setApplicationStatusMap] = useState<Record<string, { status: 'WAITING' | 'ACCEPTED' | 'REJECTED' | 'SHORTLISTED', stage: string, appliedDate: string }>>({
     'job-1': { status: 'SHORTLISTED', stage: 'Technical Round 1 Scheduled', appliedDate: '24 Sep 2026' },
@@ -451,13 +455,15 @@ export default function App() {
           setJobs(mappedJobs)
         }
 
-        // Fetch student profile (to sync studentCgpa, studentBacklogs, studentDept)
+        // Fetch student profile (to sync studentCgpa, studentBacklogs, studentDept, resumeUrl)
         const profileRes = await apiFetch<any>('/students/profile')
         if (isMounted && profileRes.success && profileRes.data) {
           if (profileRes.data.cgpa != null) setStudentCgpa(profileRes.data.cgpa)
           if (profileRes.data.activeBacklogs != null) setStudentBacklogs(profileRes.data.activeBacklogs)
           if (profileRes.data.department?.code) setStudentDept(profileRes.data.department.code)
+          if (profileRes.data.resumeUrl) setStudentResumeUrl(profileRes.data.resumeUrl)
         }
+
 
         // Fetch student applications
         const appsRes = await apiFetch<any[]>('/students/applications')
@@ -649,7 +655,37 @@ export default function App() {
     }
   }
 
+  // Resume Upload Handler
+  const handleResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Client-side quick size validation (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Resume file exceeds maximum limit of 5 MB.')
+      return
+    }
+
+    setIsUploadingResume(true)
+    const res = await uploadResume(file)
+    setIsUploadingResume(false)
+
+    if (res.success && res.data) {
+      setStudentResumeUrl(res.data.resumeUrl)
+      showToast(`Resume "${res.data.fileName}" uploaded and linked successfully!`)
+    } else {
+      showToast(res.error || 'Failed to upload resume.')
+    }
+
+    // Reset input
+    if (resumeInputRef.current) {
+      resumeInputRef.current.value = ''
+    }
+  }
+
   // Not logged in -> Render Sign In
+
   if (!currentUser) {
     return <KexsioSignInCard onSuccess={handleLoginSuccess} />
   }
@@ -2033,7 +2069,83 @@ export default function App() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Official Verified Resume File Section */}
+                      <div style={{ marginTop: '16px', padding: '16px', borderRadius: '10px', backgroundColor: '#FFFFFF', border: '1px dashed #CBD5E1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0F172A' }}>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                              <line x1="16" y1="13" x2="8" y2="13" />
+                              <line x1="16" y1="17" x2="8" y2="17" />
+                              <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Official Placement Resume</span>
+                              {studentResumeUrl ? (
+                                <span style={{ fontSize: '10px', fontWeight: '700', color: '#16A34A', backgroundColor: '#DCFCE7', padding: '2px 6px', borderRadius: '4px' }}>
+                                  ✓ Uploaded &amp; Linked
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '10px', fontWeight: '600', color: '#D97706', backgroundColor: '#FEF3C7', padding: '2px 6px', borderRadius: '4px' }}>
+                                  Pending Upload
+                                </span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '11px', color: '#64748B' }}>
+                              {studentResumeUrl
+                                ? `Current file: ${studentResumeUrl.split('/').pop()}`
+                                : 'Accepted formats: PDF, DOC, DOCX (Max size: 5 MB). Used by recruiters across all drives.'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <input
+                            ref={resumeInputRef}
+                            type="file"
+                            accept=".pdf,.doc,.docx"
+                            style={{ display: 'none' }}
+                            onChange={handleResumeFileChange}
+                          />
+
+                          {studentResumeUrl && (
+                            <a
+                              href={studentResumeUrl.startsWith('http') ? studentResumeUrl : `http://localhost:5000${studentResumeUrl}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="outline-btn"
+                              style={{ padding: '7px 12px', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                              Preview
+                            </a>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => resumeInputRef.current?.click()}
+                            disabled={isUploadingResume}
+                            className="solid-btn"
+                            style={{ padding: '7px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                              <polyline points="17 8 12 3 7 8" />
+                              <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            {isUploadingResume ? 'Uploading...' : studentResumeUrl ? 'Replace Resume' : 'Upload Resume'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
+
 
                     {/* Scorecard Metric Tiles */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
