@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import KexsioSignInCard, { UserRole } from './KexsioSignInCard'
+import PostLoginLandingPage from './PostLoginLandingPage'
 import { apiFetch, tokenStorage, UserSession, uploadResume } from './api'
 import { supabase, isSupabaseConfigured } from './supabaseClient'
+import ErrorBoundary from './ErrorBoundary'
 
 
 // ─────────────────────────────────────────────
@@ -383,17 +385,48 @@ const initialPending: PendingReview[] = [
 ]
 
 export default function App() {
+  // Session persistence: restore user from storage on startup if available
   const [currentUser, setCurrentUser] = useState<UserSession | null>(() => {
     return tokenStorage.getUser()
   })
+  const [isAuthRestored, setIsAuthRestored] = useState(false)
 
   // Responsive mobile menu toggle
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Primary post-login view ('landing' | 'portal')
+  const [currentView, setCurrentView] = useState<'landing' | 'portal'>(() => {
+    if (typeof window !== 'undefined') {
+      const stateView = window.history.state?.c2cView
+      if (stateView === 'landing' || stateView === 'portal') return stateView
+      const path = window.location.pathname
+      if (path.startsWith('/portal') || path.startsWith('/dashboard')) return 'portal'
+    }
+    return 'landing'
+  })
+
   // Router sub-route states
-  const [studentTab, setStudentTab] = useState<'drives' | 'my-applications' | 'eligibility'>('drives')
-  const [recruiterTab, setRecruiterTab] = useState<'pipeline' | 'post-job' | 'schedule'>('pipeline')
-  const [adminTab, setAdminTab] = useState<'overview' | 'approvals' | 'students-audit' | 'audit-logs'>('overview')
+  const [studentTab, setStudentTab] = useState<'drives' | 'my-applications' | 'eligibility'>(() => {
+    if (typeof window !== 'undefined') {
+      const stateTab = window.history.state?.c2cTab
+      if (stateTab === 'drives' || stateTab === 'my-applications' || stateTab === 'eligibility') return stateTab
+    }
+    return 'drives'
+  })
+  const [recruiterTab, setRecruiterTab] = useState<'pipeline' | 'post-job' | 'schedule'>(() => {
+    if (typeof window !== 'undefined') {
+      const stateTab = window.history.state?.c2cTab
+      if (stateTab === 'pipeline' || stateTab === 'post-job' || stateTab === 'schedule') return stateTab
+    }
+    return 'pipeline'
+  })
+  const [adminTab, setAdminTab] = useState<'overview' | 'approvals' | 'students-audit' | 'audit-logs'>(() => {
+    if (typeof window !== 'undefined') {
+      const stateTab = window.history.state?.c2cTab
+      if (stateTab === 'overview' || stateTab === 'approvals' || stateTab === 'students-audit' || stateTab === 'audit-logs') return stateTab
+    }
+    return 'overview'
+  })
 
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('')
@@ -461,6 +494,79 @@ export default function App() {
       toastTimerRef.current = null
     }, 3500)
   }
+
+  // Startup: Validate stored session with backend and mark auth restored
+  useEffect(() => {
+    let isMounted = true
+
+    async function restoreSession() {
+      const storedToken = tokenStorage.get()
+      const storedUser = tokenStorage.getUser()
+
+      if (storedToken && storedUser) {
+        try {
+          const meRes = await apiFetch<any>('/auth/me')
+          if (isMounted) {
+            if (meRes.success && meRes.data) {
+              const refreshedUser: UserSession = {
+                id: meRes.data.id,
+                email: meRes.data.email,
+                role: meRes.data.role,
+                name: meRes.data.studentProfile?.fullName || meRes.data.recruiterProfile?.fullName || storedUser.name,
+                token: storedToken
+              }
+              setCurrentUser(refreshedUser)
+              tokenStorage.setUser(refreshedUser)
+            } else if (meRes.error && (meRes.error.includes('401') || meRes.error.includes('token') || meRes.error.includes('expired'))) {
+              // Token expired or invalid
+              tokenStorage.remove()
+              tokenStorage.removeUser()
+              setCurrentUser(null)
+              showToast('Session expired. Please sign in again.')
+            }
+          }
+        } catch (err) {
+          console.warn('Session verification fallback:', err)
+        }
+      }
+      if (isMounted) {
+        setIsAuthRestored(true)
+      }
+    }
+
+    restoreSession()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Sync currentView with Browser History Back/Forward button
+  useEffect(() => {
+    // Initial state setup if history state not yet initialized
+    if (!window.history.state || !window.history.state.c2cView) {
+      window.history.replaceState({ c2cView: currentView }, '')
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.c2cView) {
+        setCurrentView(event.state.c2cView)
+        if (event.state.c2cTab) {
+          if (currentUser?.role === 'STUDENT') setStudentTab(event.state.c2cTab)
+          else if (currentUser?.role === 'RECRUITER') setRecruiterTab(event.state.c2cTab)
+          else if (currentUser?.role === 'ADMIN') setAdminTab(event.state.c2cTab)
+        }
+      } else {
+        // Fallback default
+        setCurrentView('landing')
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [currentUser?.role])
 
   // Listen for Supabase OAuth Redirects & Session Changes
   useEffect(() => {
@@ -704,17 +810,18 @@ export default function App() {
   // Login handler
   const handleLoginSuccess = (user: UserSession) => {
     setCurrentUser(user)
+    setCurrentView('landing')
     tokenStorage.setUser(user)
-    showToast(`Welcome back, ${user.name}!`)
+    showToast(`Welcome, ${user.name}!`)
   }
 
-  // Sign out handler - Full browser navigation to '/'
+  // Sign out handler - cleanly return to login page without jarring refresh
   const handleSignOut = () => {
     setCurrentUser(null)
+    setCurrentView('landing')
     tokenStorage.remove()
     tokenStorage.removeUser()
     setMobileMenuOpen(false)
-    window.location.href = '/'
   }
 
   // Notification handlers
@@ -777,9 +884,41 @@ export default function App() {
   }
 
   // Not logged in -> Render Sign In
-
   if (!currentUser) {
     return <KexsioSignInCard onSuccess={handleLoginSuccess} />
+  }
+
+  // Handle navigation from Landing Page to specific role tab
+  const handleLandingNavigateTab = (tabId: string) => {
+    if (currentUser.role === 'STUDENT') {
+      setStudentTab(tabId as any)
+    } else if (currentUser.role === 'RECRUITER') {
+      setRecruiterTab(tabId as any)
+    } else if (currentUser.role === 'ADMIN') {
+      setAdminTab(tabId as any)
+    }
+    window.history.pushState({ c2cView: 'portal', c2cTab: tabId }, '', `/portal?tab=${encodeURIComponent(tabId)}`)
+    setCurrentView('portal')
+  }
+
+  // Post-Login Landing Page View
+  if (currentView === 'landing') {
+    return (
+      <ErrorBoundary onReset={() => setCurrentView('landing')}>
+        <PostLoginLandingPage
+          user={currentUser}
+          onNavigateTab={handleLandingNavigateTab}
+          onSignOut={handleSignOut}
+          jobsCount={jobs.length}
+          applicationsCount={currentUser.role === 'STUDENT' ? appliedJobs.length : applicants.length}
+          interviewsCount={interviews.length}
+          pendingCount={pendingList.length}
+          studentsAuditCount={studentsAudit.length}
+          auditLogsCount={auditLogs.length}
+          liveJobs={jobs}
+        />
+      </ErrorBoundary>
+    )
   }
 
   // Quick Eligibility Check
@@ -1019,7 +1158,8 @@ export default function App() {
   }, [jobs, searchQuery, selectedDeptFilter])
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <ErrorBoundary onReset={() => setCurrentView('landing')}>
+      <div style={{ display: 'flex', height: '100vh', width: '100vw', backgroundColor: '#F8FAFC', color: '#0F172A', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <style>{`
         * { box-sizing: border-box; }
         
@@ -1370,8 +1510,12 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '16px', borderBottom: '1px solid #E2E8F0', marginBottom: '18px' }}>
             <div
               className="c2c-brand-chip"
-              title="Return to Home"
-              onClick={() => { window.location.href = '/' }}
+              title="Return to Landing Page"
+              onClick={() => {
+                window.history.pushState({ c2cView: 'landing' }, '', '/')
+                setCurrentView('landing')
+                setMobileMenuOpen(false)
+              }}
             >
               <div className="c2c-logo-badge">
                 C2C
@@ -1391,6 +1535,34 @@ export default function App() {
               aria-label="Close menu"
             >
               ✕
+            </button>
+          </div>
+
+          {/* Quick Home / Landing Link */}
+          <div style={{ marginBottom: '8px' }}>
+            <button
+              onClick={() => {
+                window.history.pushState({ c2cView: 'landing' }, '', '/')
+                setCurrentView('landing')
+                setMobileMenuOpen(false)
+              }}
+              className="c2c-nav-item"
+              title="Return to Welcome Hub"
+              style={{
+                width: '100%',
+                fontWeight: '600',
+                color: '#2563EB',
+                backgroundColor: '#EFF6FF',
+                border: '1px solid #DBEAFE'
+              }}
+            >
+              <span className="c2c-nav-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </span>
+              <span className="c2c-sidebar-text">← Home Hub</span>
             </button>
           </div>
 
@@ -2945,5 +3117,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   )
 }
